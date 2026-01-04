@@ -1,16 +1,47 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
-
 export const metadata: Metadata = {
-  title: "Smoothspec - PC Upgrade Advisor",
-  description: "Get game-specific upgrade recommendations for your budget",
-  generator: "v0.app",
+  title: {
+    default: "Smoothspec - PC Upgrade Advisor",
+    template: "%s | Smoothspec",
+  },
+  description:
+    "Find the best PC component upgrades for your favorite games. Get personalized recommendations based on your current build, games, and budget.",
+  keywords: [
+    "PC upgrade",
+    "gaming PC",
+    "GPU upgrade",
+    "CPU upgrade",
+    "bottleneck calculator",
+    "PC build advisor",
+    "gaming performance",
+    "hardware recommendations",
+  ],
+  authors: [{ name: "Smoothspec" }],
+  creator: "Smoothspec",
+  publisher: "Smoothspec",
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "Smoothspec",
+    title: "Smoothspec - PC Upgrade Advisor",
+    description:
+      "Find the best PC component upgrades for your favorite games. Get personalized recommendations based on your current build, games, and budget.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Smoothspec - PC Upgrade Advisor",
+    description:
+      "Find the best PC component upgrades for your favorite games. Get personalized recommendations based on your current build.",
+  },
   icons: {
     icon: [
       {
@@ -28,6 +59,9 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-icon.png",
   },
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://smoothspec.com"
+  ),
 }
 
 export default function RootLayout({
@@ -40,6 +74,7 @@ export default function RootLayout({
       <body className={`font-sans antialiased`}>
         {children}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 
 interface Component {
@@ -27,28 +27,38 @@ export function useComponents(type: "cpu" | "gpu" | "ram" | "storage" | "psu") {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchComponents() {
-      setLoading(true)
-      const { data, error } = await supabase
+  const fetchComponents = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data, error: fetchError } = await supabase
         .from("components")
         .select("*")
         .eq("type", type)
         .order("brand")
         .order("model")
 
-      if (error) {
-        setError(error.message)
+      if (fetchError) {
+        setError(fetchError.message)
       } else {
         setComponents(data || [])
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load components")
+    } finally {
       setLoading(false)
     }
-
-    fetchComponents()
   }, [type])
 
-  return { components, loading, error }
+  useEffect(() => {
+    fetchComponents()
+  }, [fetchComponents])
+
+  const retry = useCallback(() => {
+    fetchComponents()
+  }, [fetchComponents])
+
+  return { components, loading, error, retry }
 }
 
 export function useGames() {
@@ -56,26 +66,36 @@ export function useGames() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchGames() {
-      setLoading(true)
-      const { data, error } = await supabase
+  const fetchGames = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data, error: fetchError } = await supabase
         .from("games")
         .select("*")
         .order("name")
 
-      if (error) {
-        setError(error.message)
+      if (fetchError) {
+        setError(fetchError.message)
       } else {
         setGames(data || [])
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load games")
+    } finally {
       setLoading(false)
     }
-
-    fetchGames()
   }, [])
 
-  return { games, loading, error }
+  useEffect(() => {
+    fetchGames()
+  }, [fetchGames])
+
+  const retry = useCallback(() => {
+    fetchGames()
+  }, [fetchGames])
+
+  return { games, loading, error, retry }
 }
 
 export function formatComponentName(component: Component): string {

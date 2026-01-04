@@ -8,6 +8,14 @@
  * Higher scores = better performance
  */
 
+import {
+  BENCHMARK_SCALES,
+  BOTTLENECK_THRESHOLD,
+  COMPONENT_LIFESPANS,
+  URGENCY_THRESHOLDS,
+  PRIORITY_WEIGHTS,
+} from './constants'
+
 // Score tiers for quick categorization
 export const CPU_TIERS = {
   BUDGET: { min: 0, max: 15000, label: 'Budget' },
@@ -59,13 +67,12 @@ export function calculateBottleneck(
   gpuWeight: number = 1.0
 ): { component: 'cpu' | 'gpu' | 'balanced'; percentage: number } {
   // Normalize scores to same scale (0-100)
-  const normalizedCpu = (cpuScore / 60000) * 100 * cpuWeight
-  const normalizedGpu = (gpuScore / 40000) * 100 * gpuWeight
+  const normalizedCpu = (cpuScore / BENCHMARK_SCALES.CPU_MAX) * 100 * cpuWeight
+  const normalizedGpu = (gpuScore / BENCHMARK_SCALES.GPU_MAX) * 100 * gpuWeight
 
   const diff = normalizedCpu - normalizedGpu
-  const threshold = 10 // Within 10% is considered balanced
 
-  if (Math.abs(diff) < threshold) {
+  if (Math.abs(diff) < BOTTLENECK_THRESHOLD) {
     return { component: 'balanced', percentage: 0 }
   }
 
@@ -94,20 +101,11 @@ export function getUpgradeUrgency(
   componentType: 'cpu' | 'gpu' | 'ram' | 'storage' | 'psu',
   ageYears: number
 ): 'low' | 'medium' | 'high' {
-  // Expected lifespan varies by component type
-  const lifespans: Record<string, number> = {
-    cpu: 5,
-    gpu: 4,
-    ram: 7,
-    storage: 5,
-    psu: 8,
-  }
-
-  const expectedLifespan = lifespans[componentType] || 5
+  const expectedLifespan = COMPONENT_LIFESPANS[componentType] || 5
   const ageRatio = ageYears / expectedLifespan
 
-  if (ageRatio >= 0.8) return 'high'
-  if (ageRatio >= 0.5) return 'medium'
+  if (ageRatio >= URGENCY_THRESHOLDS.high) return 'high'
+  if (ageRatio >= URGENCY_THRESHOLDS.medium) return 'medium'
   return 'low'
 }
 
@@ -124,11 +122,6 @@ export function calculateUpgradePriority(params: {
 }): number {
   const { bottleneckPercentage, ageYears, componentType, estimatedCost, performanceGain } = params
 
-  // Weight factors
-  const bottleneckWeight = 0.4
-  const ageWeight = 0.2
-  const valueWeight = 0.4
-
   // Bottleneck score (0-100)
   const bottleneckScore = Math.min(bottleneckPercentage, 100)
 
@@ -142,8 +135,8 @@ export function calculateUpgradePriority(params: {
     : 0
 
   return Math.round(
-    bottleneckScore * bottleneckWeight +
-    ageScore * ageWeight +
-    valueScore * valueWeight
+    bottleneckScore * PRIORITY_WEIGHTS.bottleneck +
+    ageScore * PRIORITY_WEIGHTS.age +
+    valueScore * PRIORITY_WEIGHTS.value
   )
 }

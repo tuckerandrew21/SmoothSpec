@@ -160,12 +160,18 @@ export class BestBuyClient {
 
   /**
    * Build an affiliate URL for a product
-   * Note: You'll need to join Best Buy's affiliate program and replace this with your affiliate ID
+   * Set BESTBUY_AFFILIATE_ID in .env.local to enable affiliate tracking
+   * Sign up at: https://www.bestbuy.com/site/affiliate-program
    */
   buildAffiliateUrl(productUrl: string): string {
-    // For now, return the direct URL
-    // TODO: Add affiliate tracking parameters when affiliate program is set up
-    return productUrl
+    const affiliateId = process.env.BESTBUY_AFFILIATE_ID
+    if (!affiliateId) {
+      return productUrl
+    }
+    // Best Buy uses Impact Radius for affiliate tracking
+    // Format: https://bestbuy.7tiv.net/c/{affiliate_id}/614286/10014?u={encoded_product_url}
+    const encodedUrl = encodeURIComponent(productUrl)
+    return `https://bestbuy.7tiv.net/c/${affiliateId}/614286/10014?u=${encodedUrl}`
   }
 }
 
