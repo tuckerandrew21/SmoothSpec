@@ -94,9 +94,12 @@ export async function searchAllRetailers(
           products = []
       }
 
-      console.log(`[searchAllRetailers] ${retailer.name} returned ${products.length} products`)
+      console.log(`[searchAllRetailers] ${retailer.name} returned ${products.length} products for query "${model}"`)
       if (products.length > 0) {
         console.log(`[searchAllRetailers] First product:`, products[0].name, products[0].price, products[0].inStock)
+        const inStockCount = products.filter(p => p.inStock).length
+        const withPriceCount = products.filter(p => p.price > 0).length
+        console.log(`[searchAllRetailers] ${inStockCount}/${products.length} in stock, ${withPriceCount}/${products.length} with price`)
       }
 
       // Apply affiliate URLs

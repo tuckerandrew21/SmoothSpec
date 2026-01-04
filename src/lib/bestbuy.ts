@@ -55,11 +55,12 @@ export class BestBuyClient {
   }): Promise<BestBuySearchResponse> {
     const { pageSize = 10, page = 1, categoryId } = options || {}
 
-    // Build search query
-    let searchQuery = `(search=${encodeURIComponent(query)})`
+    // Build search query - all conditions must be inside parentheses
+    const conditions = [`search=${encodeURIComponent(query)}`]
     if (categoryId) {
-      searchQuery += `&(categoryPath.id=${categoryId})`
+      conditions.push(`categoryPath.id=${categoryId}`)
     }
+    const searchQuery = `(${conditions.join('&')})`
 
     const url = new URL(`${BESTBUY_API_BASE}/products${searchQuery}`)
     url.searchParams.set('apiKey', this.apiKey)
