@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { TrendingUp, ExternalLink, Loader2 } from "lucide-react"
 import type { UpgradeRecommendation } from "@/types/analysis"
-import { getRetailerLinksForComponent, type RetailerLink } from "@/app/actions/prices"
+import { getRetailerLinksForComponent, type RetailerLinksResult, type RetailerLink } from "@/app/actions/prices"
 import { trackAffiliateClicked } from "@/lib/analytics"
 
 interface UpgradeRecommendationCardProps {
@@ -18,7 +18,7 @@ export function UpgradeRecommendationCard({
   recommendation,
   index,
 }: UpgradeRecommendationCardProps) {
-  const [retailerLinks, setRetailerLinks] = useState<RetailerLink[]>([])
+  const [priceData, setPriceData] = useState<RetailerLinksResult | null>(null)
   const [loadingPrices, setLoadingPrices] = useState(true)
 
   // Get component type for the API call
@@ -30,8 +30,8 @@ export function UpgradeRecommendationCard({
     async function fetchLinks() {
       setLoadingPrices(true)
       try {
-        const links = await getRetailerLinksForComponent(componentName, componentType)
-        setRetailerLinks(links)
+        const result = await getRetailerLinksForComponent(componentName, componentType)
+        setPriceData(result)
       } catch (error) {
         console.error("Failed to fetch retailer links:", error)
       } finally {
@@ -41,9 +41,9 @@ export function UpgradeRecommendationCard({
     fetchLinks()
   }, [componentName, componentType])
 
-  // Get Best Buy price if available
-  const bestBuyLink = retailerLinks.find((l) => l.retailer === "Best Buy")
-  const lowestPrice = bestBuyLink?.price
+  // Extract estimated price and retailer links
+  const estimatedPrice = priceData?.estimatedPrice
+  const retailerLinks = priceData?.links ?? []
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -114,12 +114,12 @@ export function UpgradeRecommendationCard({
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-xs sm:text-sm">Loading prices...</span>
               </div>
-            ) : lowestPrice ? (
+            ) : estimatedPrice ? (
               <>
                 <div className="text-xl sm:text-2xl font-bold text-primary">
-                  ${lowestPrice.toLocaleString()}
+                  ${estimatedPrice.toLocaleString()}
                 </div>
-                <div className="text-xs sm:text-sm text-muted-foreground sm:mt-1">at Best Buy</div>
+                <div className="text-xs sm:text-sm text-muted-foreground sm:mt-1">estimated</div>
               </>
             ) : (
               <div className="text-xs sm:text-sm text-muted-foreground">
@@ -162,31 +162,18 @@ export function UpgradeRecommendationCard({
               {retailerLinks.map((link) => (
                 <Button
                   key={link.retailer}
-                  variant={link.retailer === "Best Buy" && link.price ? "default" : "outline"}
+                  variant="outline"
                   size="sm"
-                  className={`gap-2 text-xs sm:text-sm justify-start sm:justify-center w-full sm:w-auto ${
-                    link.retailer === "Best Buy" && link.price ? "" : "bg-transparent"
-                  }`}
+                  className="gap-2 text-xs sm:text-sm justify-start sm:justify-center w-full sm:w-auto bg-transparent"
                   asChild
                 >
                   <a
-                    href={link.productUrl || link.searchUrl}
+                    href={link.searchUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => handleAffiliateLinkClick(link.retailer)}
                   >
-                    {link.price ? (
-                      <>
-                        ${link.price.toLocaleString()} at {link.retailer}
-                        {link.onSale && (
-                          <Badge variant="secondary" className="ml-1 text-xs">
-                            Sale
-                          </Badge>
-                        )}
-                      </>
-                    ) : (
-                      <>Compare at {link.retailer}</>
-                    )}
+                    Compare at {link.retailer}
                     <ExternalLink className="h-3 w-3 ml-auto sm:ml-0" />
                   </a>
                 </Button>

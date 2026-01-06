@@ -26,6 +26,15 @@ export interface RetailerLink {
 }
 
 /**
+ * Result from getRetailerLinksForComponent (MVP: PCPartPicker price + search links)
+ */
+export interface RetailerLinksResult {
+  estimatedPrice?: number
+  estimatedProductName?: string
+  links: RetailerLink[]
+}
+
+/**
  * Result from multi-retailer price search
  */
 export interface MultiRetailerPriceResult {
@@ -438,14 +447,34 @@ export async function fetchMultiRetailerPricesForComponent(
 }
 
 /**
- * Get retailer links for a component by name (simpler API for UI)
- * Always returns all 3 retailers with search URLs
- * Best Buy will include price if API is configured
+ * Get retailer links for a component by name (MVP: PCPartPicker price + search links)
+ * Skips live retailer API calls to avoid rate limits
+ * Returns estimated price from PCPartPicker + search URLs for all retailers
  */
 export async function getRetailerLinksForComponent(
   componentName: string,
   componentType: "cpu" | "gpu" | "ram" | "storage" | "psu"
-): Promise<RetailerLink[]> {
-  const result = await fetchMultiRetailerPrices(componentName, componentType)
-  return result.retailerLinks
+): Promise<RetailerLinksResult> {
+  const searchUrls = getRetailerSearchUrls(componentName)
+
+  // Get PCPartPicker price only (fast, no rate limits)
+  let estimatedPrice: number | undefined
+  let estimatedProductName: string | undefined
+  try {
+    const pcpp = await getComponentPrice(componentType, componentName)
+    estimatedPrice = pcpp.price ?? undefined
+    estimatedProductName = pcpp.productName ?? undefined
+  } catch (err) {
+    console.warn("[getRetailerLinksForComponent] PCPartPicker lookup failed:", err)
+  }
+
+  return {
+    estimatedPrice,
+    estimatedProductName,
+    links: [
+      { retailer: "Best Buy", searchUrl: searchUrls["Best Buy"] },
+      { retailer: "Amazon", searchUrl: searchUrls["Amazon"] },
+      { retailer: "Newegg", searchUrl: searchUrls["Newegg"] },
+    ],
+  }
 }
