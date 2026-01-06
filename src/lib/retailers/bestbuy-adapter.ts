@@ -6,6 +6,27 @@
 import { BestBuyClient } from "../bestbuy"
 import type { RetailerClient, RetailerProduct } from "./types"
 
+/**
+ * Check if a product name matches the requested model
+ * Extracts key identifiers (numbers, model codes) and validates presence
+ */
+function productMatchesModel(productName: string, requestedModel: string): boolean {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, ' ')
+  const productNorm = normalize(productName)
+  const modelNorm = normalize(requestedModel)
+
+  // Extract model numbers (e.g., "7800", "9060", "5800X3D", "14900")
+  const modelNumbers = modelNorm.match(/\d{4,5}[a-z]*\d*/g) || []
+
+  // If no model numbers found, fall back to basic substring check
+  if (modelNumbers.length === 0) {
+    return productNorm.includes(modelNorm)
+  }
+
+  // All model numbers must be present in the product name
+  return modelNumbers.every(num => productNorm.includes(num))
+}
+
 export class BestBuyAdapter implements RetailerClient {
   readonly name = "Best Buy" as const
   readonly enabled: boolean
@@ -48,31 +69,41 @@ export class BestBuyAdapter implements RetailerClient {
   async searchCPUs(model: string): Promise<RetailerProduct[]> {
     if (!this.client) return []
     const products = await this.client.searchCPUs(model)
-    return products.map((p) => this.formatProduct(p))
+    return products
+      .filter((p) => productMatchesModel(p.name, model))
+      .map((p) => this.formatProduct(p))
   }
 
   async searchGPUs(model: string): Promise<RetailerProduct[]> {
     if (!this.client) return []
     const products = await this.client.searchGPUs(model)
-    return products.map((p) => this.formatProduct(p))
+    return products
+      .filter((p) => productMatchesModel(p.name, model))
+      .map((p) => this.formatProduct(p))
   }
 
   async searchRAM(model: string): Promise<RetailerProduct[]> {
     if (!this.client) return []
     const products = await this.client.searchRAM(model)
-    return products.map((p) => this.formatProduct(p))
+    return products
+      .filter((p) => productMatchesModel(p.name, model))
+      .map((p) => this.formatProduct(p))
   }
 
   async searchStorage(model: string): Promise<RetailerProduct[]> {
     if (!this.client) return []
     const products = await this.client.searchStorage(model)
-    return products.map((p) => this.formatProduct(p))
+    return products
+      .filter((p) => productMatchesModel(p.name, model))
+      .map((p) => this.formatProduct(p))
   }
 
   async searchPSU(model: string): Promise<RetailerProduct[]> {
     if (!this.client) return []
     const products = await this.client.searchPSU(model)
-    return products.map((p) => this.formatProduct(p))
+    return products
+      .filter((p) => productMatchesModel(p.name, model))
+      .map((p) => this.formatProduct(p))
   }
 
   buildAffiliateUrl(productUrl: string): string {

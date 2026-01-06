@@ -1,0 +1,38 @@
+name: Refresh PCPartPicker Prices
+
+on:
+  schedule:
+    # Run daily at 6 AM UTC (1 AM EST / 10 PM PST)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Refresh PCPartPicker prices
+        run: npx ts-node scripts/import-pcpartpicker.ts
+        env:
+          # Required secrets - add these in GitHub repo Settings > Secrets and variables > Actions
+          # NEXT_PUBLIC_SUPABASE_URL: Your Supabase project URL (e.g., https://xxx.supabase.co)
+          # SUPABASE_SERVICE_ROLE_KEY: Your Supabase service role key (from API settings)
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Summary
+        run: echo "Price refresh completed at $(date -u)"

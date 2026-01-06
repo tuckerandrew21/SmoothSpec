@@ -4,6 +4,7 @@ import { BestBuyClient, formatBestBuyPrice } from "@/lib/bestbuy"
 import { supabase } from "@/lib/supabase"
 import { API_CONFIG } from "@/lib/constants"
 import { searchAllRetailers, getRetailerStatus, getRetailerSearchUrls, type RetailerName } from "@/lib/retailers"
+import { getComponentPrice, type PriceResult } from "@/lib/pcpartpicker-prices"
 import type { PriceInfo } from "@/types/analysis"
 
 /**
@@ -33,6 +34,10 @@ export interface MultiRetailerPriceResult {
   retailers: Record<RetailerName, boolean>
   searchUrls: Record<RetailerName, string>
   retailerLinks: RetailerLink[]
+  /** PCPartPicker estimated price (primary source) */
+  estimatedPrice?: number
+  /** PCPartPicker product name */
+  estimatedProductName?: string
 }
 
 /**
@@ -242,6 +247,7 @@ function isRetailerSupportedType(type: string): type is "cpu" | "gpu" | "ram" | 
 
 /**
  * Fetch prices from all enabled retailers
+ * Uses PCPartPicker as primary price source, retailers as secondary
  * Returns prices sorted by price with best price marked
  */
 export async function fetchMultiRetailerPrices(
@@ -251,6 +257,17 @@ export async function fetchMultiRetailerPrices(
   // Always get search URLs - these work without any API keys
   const searchUrls = getRetailerSearchUrls(componentName)
   const retailers = getRetailerStatus()
+
+  // First, try to get price from PCPartPicker dataset (fast, reliable)
+  let pcpartpickerPrice: PriceResult | null = null
+  try {
+    pcpartpickerPrice = await getComponentPrice(componentType, componentName)
+    if (pcpartpickerPrice.price) {
+      console.log("[fetchMultiRetailerPrices] PCPartPicker price:", pcpartpickerPrice.price, "for", pcpartpickerPrice.productName)
+    }
+  } catch (err) {
+    console.warn("[fetchMultiRetailerPrices] PCPartPicker lookup failed:", err)
+  }
 
   try {
     console.log("[fetchMultiRetailerPrices] Searching for:", componentName, componentType)
@@ -308,10 +325,13 @@ export async function fetchMultiRetailerPrices(
       retailers,
       searchUrls,
       retailerLinks,
+      // Include PCPartPicker estimated price
+      estimatedPrice: pcpartpickerPrice?.price ?? undefined,
+      estimatedProductName: pcpartpickerPrice?.productName ?? undefined,
     }
   } catch (error) {
     console.error("Error fetching multi-retailer prices:", error)
-    // Even on error, return search URLs so user can still click through
+    // Even on error, return search URLs and PCPartPicker price if available
     return {
       prices: [],
       bestPrice: null,
@@ -322,6 +342,8 @@ export async function fetchMultiRetailerPrices(
         { retailer: "Amazon", searchUrl: searchUrls["Amazon"] },
         { retailer: "Newegg", searchUrl: searchUrls["Newegg"] },
       ],
+      estimatedPrice: pcpartpickerPrice?.price ?? undefined,
+      estimatedProductName: pcpartpickerPrice?.productName ?? undefined,
     }
   }
 }
