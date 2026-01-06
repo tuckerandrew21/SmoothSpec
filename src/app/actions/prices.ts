@@ -3,7 +3,7 @@
 import { BestBuyClient, formatBestBuyPrice } from "@/lib/bestbuy"
 import { supabase } from "@/lib/supabase"
 import { API_CONFIG } from "@/lib/constants"
-import { searchAllRetailers, getRetailerStatus, type RetailerName } from "@/lib/retailers"
+import { searchAllRetailers, getRetailerStatus, getRetailerSearchUrls, type RetailerName } from "@/lib/retailers"
 import type { PriceInfo } from "@/types/analysis"
 
 /**
@@ -14,12 +14,25 @@ export interface ExtendedPriceInfo extends PriceInfo {
 }
 
 /**
+ * Retailer link info (always available, even without API pricing)
+ */
+export interface RetailerLink {
+  retailer: RetailerName
+  searchUrl: string
+  price?: number
+  productUrl?: string
+  onSale?: boolean
+}
+
+/**
  * Result from multi-retailer price search
  */
 export interface MultiRetailerPriceResult {
   prices: ExtendedPriceInfo[]
   bestPrice: { retailer: RetailerName; price: number; url: string } | null
   retailers: Record<RetailerName, boolean>
+  searchUrls: Record<RetailerName, string>
+  retailerLinks: RetailerLink[]
 }
 
 /**
@@ -235,8 +248,11 @@ export async function fetchMultiRetailerPrices(
   componentName: string,
   componentType: "cpu" | "gpu" | "ram" | "storage" | "psu"
 ): Promise<MultiRetailerPriceResult> {
+  // Always get search URLs - these work without any API keys
+  const searchUrls = getRetailerSearchUrls(componentName)
+  const retailers = getRetailerStatus()
+
   try {
-    const retailers = getRetailerStatus()
     console.log("[fetchMultiRetailerPrices] Searching for:", componentName, componentType)
     console.log("[fetchMultiRetailerPrices] Enabled retailers:", retailers)
 
@@ -267,18 +283,63 @@ export async function fetchMultiRetailerPrices(
     // Sort by price ascending
     allPrices.sort((a, b) => a.price - b.price)
 
+    // Build retailer links - always show all 3, with price if available
+    const retailerLinks: RetailerLink[] = [
+      {
+        retailer: "Best Buy",
+        searchUrl: searchUrls["Best Buy"],
+        ...getBestPriceForRetailer(allPrices, "Best Buy"),
+      },
+      {
+        retailer: "Amazon",
+        searchUrl: searchUrls["Amazon"],
+        ...getBestPriceForRetailer(allPrices, "Amazon"),
+      },
+      {
+        retailer: "Newegg",
+        searchUrl: searchUrls["Newegg"],
+        ...getBestPriceForRetailer(allPrices, "Newegg"),
+      },
+    ]
+
     return {
       prices: allPrices,
       bestPrice: result.bestPrice,
       retailers,
+      searchUrls,
+      retailerLinks,
     }
   } catch (error) {
     console.error("Error fetching multi-retailer prices:", error)
+    // Even on error, return search URLs so user can still click through
     return {
       prices: [],
       bestPrice: null,
-      retailers: getRetailerStatus(),
+      retailers,
+      searchUrls,
+      retailerLinks: [
+        { retailer: "Best Buy", searchUrl: searchUrls["Best Buy"] },
+        { retailer: "Amazon", searchUrl: searchUrls["Amazon"] },
+        { retailer: "Newegg", searchUrl: searchUrls["Newegg"] },
+      ],
     }
+  }
+}
+
+/**
+ * Helper to get the best price for a specific retailer from the prices array
+ */
+function getBestPriceForRetailer(
+  prices: ExtendedPriceInfo[],
+  retailer: RetailerName
+): { price?: number; productUrl?: string; onSale?: boolean } {
+  const retailerPrices = prices.filter((p) => p.retailer === retailer)
+  if (retailerPrices.length === 0) return {}
+  const best = retailerPrices[0] // Already sorted by price ascending
+  return {
+    price: best.price,
+    productUrl: best.url,
+    onSale: best.onSale,
   }
 }
 
@@ -319,22 +380,50 @@ export async function fetchMultiRetailerPricesForComponent(
 
   if (!component) {
     console.log("[fetchMultiRetailerPricesForComponent] No component found")
+    const emptySearchUrls = getRetailerSearchUrls("computer component")
     return {
       prices: [],
       bestPrice: null,
       retailers: getRetailerStatus(),
+      searchUrls: emptySearchUrls,
+      retailerLinks: [
+        { retailer: "Best Buy", searchUrl: emptySearchUrls["Best Buy"] },
+        { retailer: "Amazon", searchUrl: emptySearchUrls["Amazon"] },
+        { retailer: "Newegg", searchUrl: emptySearchUrls["Newegg"] },
+      ],
     }
   }
 
   console.log("[fetchMultiRetailerPricesForComponent] Found component:", component.brand, component.model, component.type)
 
   if (!isRetailerSupportedType(component.type)) {
+    // Still return search URLs even for unsupported types
+    const searchUrls = getRetailerSearchUrls(component.model)
     return {
       prices: [],
       bestPrice: null,
       retailers: getRetailerStatus(),
+      searchUrls,
+      retailerLinks: [
+        { retailer: "Best Buy", searchUrl: searchUrls["Best Buy"] },
+        { retailer: "Amazon", searchUrl: searchUrls["Amazon"] },
+        { retailer: "Newegg", searchUrl: searchUrls["Newegg"] },
+      ],
     }
   }
 
   return fetchMultiRetailerPrices(component.model, component.type)
+}
+
+/**
+ * Get retailer links for a component by name (simpler API for UI)
+ * Always returns all 3 retailers with search URLs
+ * Best Buy will include price if API is configured
+ */
+export async function getRetailerLinksForComponent(
+  componentName: string,
+  componentType: "cpu" | "gpu" | "ram" | "storage" | "psu"
+): Promise<RetailerLink[]> {
+  const result = await fetchMultiRetailerPrices(componentName, componentType)
+  return result.retailerLinks
 }

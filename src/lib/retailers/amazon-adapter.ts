@@ -65,4 +65,11 @@ export class AmazonAdapter implements RetailerClient {
       return productUrl
     }
   }
+
+  buildSearchUrl(query: string): string {
+    const encoded = encodeURIComponent(query)
+    const partnerTag = process.env.AMAZON_PARTNER_TAG
+    const baseUrl = `https://www.amazon.com/s?k=${encoded}`
+    return partnerTag ? `${baseUrl}&tag=${partnerTag}` : baseUrl
+  }
 }

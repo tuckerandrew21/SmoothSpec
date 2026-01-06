@@ -57,4 +57,10 @@ export class NeweggAdapter implements RetailerClient {
     // or through affiliate networks like CJ Affiliate
     return productUrl
   }
+
+  buildSearchUrl(query: string): string {
+    const encoded = encodeURIComponent(query)
+    // Newegg search URL - affiliate tracking can be added via CJ Affiliate later
+    return `https://www.newegg.com/p/pl?d=${encoded}`
+  }
 }

@@ -31,6 +31,7 @@ export interface RetailerClient {
   searchStorage(model: string): Promise<RetailerProduct[]>
   searchPSU(model: string): Promise<RetailerProduct[]>
   buildAffiliateUrl(productUrl: string): string
+  buildSearchUrl(query: string): string
 }
 
 export interface MultiRetailerResult {

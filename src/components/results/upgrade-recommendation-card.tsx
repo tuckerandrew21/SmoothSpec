@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { TrendingUp, ExternalLink, Loader2, RefreshCw, Award } from "lucide-react"
-import type { UpgradeRecommendation, PriceInfo } from "@/types/analysis"
-import { fetchMultiRetailerPricesForComponent, type ExtendedPriceInfo, type MultiRetailerPriceResult } from "@/app/actions/prices"
-import { trackPriceChecked, trackAffiliateClicked } from "@/lib/analytics"
+import { TrendingUp, ExternalLink, Loader2 } from "lucide-react"
+import type { UpgradeRecommendation } from "@/types/analysis"
+import { getRetailerLinksForComponent, type RetailerLink } from "@/app/actions/prices"
+import { trackAffiliateClicked } from "@/lib/analytics"
 
 interface UpgradeRecommendationCardProps {
   recommendation: UpgradeRecommendation
@@ -18,11 +18,32 @@ export function UpgradeRecommendationCard({
   recommendation,
   index,
 }: UpgradeRecommendationCardProps) {
-  const [priceResult, setPriceResult] = useState<MultiRetailerPriceResult | null>(null)
-  const [loadingPrices, setLoadingPrices] = useState(false)
+  const [retailerLinks, setRetailerLinks] = useState<RetailerLink[]>([])
+  const [loadingPrices, setLoadingPrices] = useState(true)
 
-  // Get prices from result or fall back to recommendation.prices
-  const prices: ExtendedPriceInfo[] = priceResult?.prices ?? recommendation.prices.map(p => ({ ...p, isBestPrice: false }))
+  // Get component type for the API call
+  const componentType = recommendation.componentType as "cpu" | "gpu" | "ram" | "storage" | "psu"
+  const componentName = `${recommendation.recommendedComponent.brand} ${recommendation.recommendedComponent.model}`
+
+  // Auto-fetch retailer links on mount
+  useEffect(() => {
+    async function fetchLinks() {
+      setLoadingPrices(true)
+      try {
+        const links = await getRetailerLinksForComponent(componentName, componentType)
+        setRetailerLinks(links)
+      } catch (error) {
+        console.error("Failed to fetch retailer links:", error)
+      } finally {
+        setLoadingPrices(false)
+      }
+    }
+    fetchLinks()
+  }, [componentName, componentType])
+
+  // Get Best Buy price if available
+  const bestBuyLink = retailerLinks.find((l) => l.retailer === "Best Buy")
+  const lowestPrice = bestBuyLink?.price
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -48,26 +69,9 @@ export function UpgradeRecommendationCard({
     }
   }
 
-  const handleFetchPrices = async () => {
-    setLoadingPrices(true)
-    trackPriceChecked(recommendation.componentType, "all")
-    try {
-      const result = await fetchMultiRetailerPricesForComponent(
-        recommendation.recommendedComponent.id
-      )
-      setPriceResult(result)
-    } catch (error) {
-      console.error("Failed to fetch prices:", error)
-    } finally {
-      setLoadingPrices(false)
-    }
-  }
-
   const handleAffiliateLinkClick = (retailer: string) => {
     trackAffiliateClicked(recommendation.componentType, retailer)
   }
-
-  const lowestPrice = prices.length > 0 ? Math.min(...prices.map((p) => p.price)) : null
 
   return (
     <Card className="border-border bg-card p-4 sm:p-6">
@@ -105,28 +109,22 @@ export function UpgradeRecommendationCard({
             </div>
           </div>
           <div className="flex items-center justify-between sm:block sm:text-right sm:shrink-0">
-            {lowestPrice ? (
+            {loadingPrices ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-xs sm:text-sm">Loading prices...</span>
+              </div>
+            ) : lowestPrice ? (
               <>
                 <div className="text-xl sm:text-2xl font-bold text-primary">
                   ${lowestPrice.toLocaleString()}
                 </div>
-                <div className="text-xs sm:text-sm text-muted-foreground sm:mt-1">Starting at</div>
+                <div className="text-xs sm:text-sm text-muted-foreground sm:mt-1">at Best Buy</div>
               </>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleFetchPrices}
-                disabled={loadingPrices}
-                className="gap-2 text-xs sm:text-sm"
-              >
-                {loadingPrices ? (
-                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
-                )}
-                Check Prices
-              </Button>
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                Compare prices below
+              </div>
             )}
           </div>
         </div>
@@ -149,51 +147,53 @@ export function UpgradeRecommendationCard({
           </div>
         )}
 
-        {/* Price Comparison */}
-        {prices.length > 0 && (
-          <div className="border-t border-border pt-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-xs sm:text-sm font-medium text-card-foreground">
-                Price Comparison
-              </h4>
-              {priceResult?.bestPrice && (
-                <div className="flex items-center gap-1 text-xs text-green-500">
-                  <Award className="h-3 w-3" />
-                  <span>Best: {priceResult.bestPrice.retailer}</span>
-                </div>
-              )}
+        {/* Retailer Links - Always show all 3 retailers */}
+        <div className="border-t border-border pt-4">
+          <h4 className="text-xs sm:text-sm font-medium text-card-foreground mb-3">
+            Shop This Component
+          </h4>
+          {loadingPrices ? (
+            <div className="flex items-center gap-2 text-muted-foreground py-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-xs sm:text-sm">Loading retailer links...</span>
             </div>
+          ) : (
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
-              {prices.map((price, idx) => (
+              {retailerLinks.map((link) => (
                 <Button
-                  key={idx}
-                  variant={price.isBestPrice ? "default" : "outline"}
+                  key={link.retailer}
+                  variant={link.retailer === "Best Buy" && link.price ? "default" : "outline"}
                   size="sm"
                   className={`gap-2 text-xs sm:text-sm justify-start sm:justify-center w-full sm:w-auto ${
-                    price.isBestPrice ? "" : "bg-transparent"
+                    link.retailer === "Best Buy" && link.price ? "" : "bg-transparent"
                   }`}
                   asChild
                 >
                   <a
-                    href={price.url}
+                    href={link.productUrl || link.searchUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => handleAffiliateLinkClick(price.retailer)}
+                    onClick={() => handleAffiliateLinkClick(link.retailer)}
                   >
-                    {price.isBestPrice && <Award className="h-3 w-3" />}
-                    {price.retailer} - ${price.price.toLocaleString()}
-                    {price.onSale && (
-                      <Badge variant="secondary" className="ml-1 text-xs">
-                        Sale
-                      </Badge>
+                    {link.price ? (
+                      <>
+                        ${link.price.toLocaleString()} at {link.retailer}
+                        {link.onSale && (
+                          <Badge variant="secondary" className="ml-1 text-xs">
+                            Sale
+                          </Badge>
+                        )}
+                      </>
+                    ) : (
+                      <>Compare at {link.retailer}</>
                     )}
                     <ExternalLink className="h-3 w-3 ml-auto sm:ml-0" />
                   </a>
                 </Button>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </Card>
   )

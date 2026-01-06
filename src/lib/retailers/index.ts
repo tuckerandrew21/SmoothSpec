@@ -154,3 +154,15 @@ export async function getBestPrice(
   const result = await searchAllRetailers(model, componentType)
   return result.bestPrice
 }
+
+/**
+ * Get search URLs for all retailers (always available, even without API)
+ */
+export function getRetailerSearchUrls(query: string): Record<RetailerName, string> {
+  const retailers = getRetailers()
+  return {
+    "Best Buy": retailers.find((r) => r.name === "Best Buy")?.buildSearchUrl(query) ?? `https://www.bestbuy.com/site/searchpage.jsp?st=${encodeURIComponent(query)}`,
+    "Amazon": retailers.find((r) => r.name === "Amazon")?.buildSearchUrl(query) ?? `https://www.amazon.com/s?k=${encodeURIComponent(query)}`,
+    "Newegg": retailers.find((r) => r.name === "Newegg")?.buildSearchUrl(query) ?? `https://www.newegg.com/p/pl?d=${encodeURIComponent(query)}`,
+  }
+}

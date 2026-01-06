@@ -79,4 +79,16 @@ export class BestBuyAdapter implements RetailerClient {
     if (!this.client) return productUrl
     return this.client.buildAffiliateUrl(productUrl)
   }
+
+  buildSearchUrl(query: string): string {
+    const encoded = encodeURIComponent(query)
+    const affiliateId = process.env.BESTBUY_AFFILIATE_ID
+    const baseUrl = `https://www.bestbuy.com/site/searchpage.jsp?st=${encoded}`
+    // If we have an affiliate ID, wrap in Impact Radius tracking
+    if (affiliateId) {
+      const encodedSearchUrl = encodeURIComponent(baseUrl)
+      return `https://bestbuy.7tiv.net/c/${affiliateId}/614286/10014?u=${encodedSearchUrl}`
+    }
+    return baseUrl
+  }
 }
