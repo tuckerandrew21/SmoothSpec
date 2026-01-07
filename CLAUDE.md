@@ -37,3 +37,23 @@ Required for full functionality:
 - `AMAZON_PARTNER_TAG` - Amazon Associates tag (optional)
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
+
+## Component Database
+
+**Location:** `supabase/seed/*.sql` (cpus.sql, gpus.sql, games.sql, peripherals.sql)
+
+**Constraints:**
+- Desktop components only - no laptop/mobile variants
+- Benchmark scores use PassMark scale (CPU: 0-60000, GPU: 0-40000)
+
+### Adding New Components - Prioritization Strategy
+
+Use **Steam Hardware Survey** to prioritize which components to add:
+1. Check https://store.steampowered.com/hwsurvey/ for current market share
+2. Filter out laptop variants (e.g., "RTX 4060 Laptop GPU")
+3. Prioritize components with highest market share first
+4. Get benchmark scores from PassMark (CPU: cpubenchmark.net, GPU: videocardbenchmark.net)
+
+For games, use **SteamCharts** (steamcharts.com) to identify most-played titles.
+
+This ensures we cover hardware that actual gamers use, not just the latest releases.

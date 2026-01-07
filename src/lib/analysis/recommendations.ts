@@ -168,8 +168,8 @@ export function generateRamRecommendation(
     recommendedComponent: {
       id: 'ram-upgrade',
       type: 'ram',
-      brand: 'Generic',
-      model: `${recommendedRam}GB DDR5`,
+      brand: '',  // Empty - will use matched brand from PCPartPicker
+      model: `DDR5 ${recommendedRam}GB Kit`,  // Better search term
       release_year: 2024,
       benchmark_score: recommendedRam * 100,
       specs: { capacity: recommendedRam, type: 'DDR5' },
@@ -208,8 +208,8 @@ export function generateStorageRecommendation(
     recommendedComponent: {
       id: 'storage-nvme',
       type: 'storage',
-      brand: 'Generic',
-      model: '1TB NVMe SSD',
+      brand: '',  // Empty - will use matched brand from PCPartPicker
+      model: '1TB NVMe SSD',  // Generic search term, brand added from match
       release_year: 2024,
       benchmark_score: 100,
       specs: { capacity: '1TB', type: 'NVMe' },

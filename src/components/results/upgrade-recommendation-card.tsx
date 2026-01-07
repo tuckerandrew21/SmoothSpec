@@ -9,6 +9,31 @@ import type { UpgradeRecommendation } from "@/types/analysis"
 import { getRetailerLinksForComponent, type RetailerLinksResult, type RetailerLink } from "@/app/actions/prices"
 import { trackAffiliateClicked } from "@/lib/analytics"
 
+/**
+ * Format a timestamp as "X days ago", "X hours ago", etc.
+ */
+function formatTimeAgo(isoTimestamp: string): string {
+  const date = new Date(isoTimestamp)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffSecs = Math.floor(diffMs / 1000)
+  const diffMins = Math.floor(diffSecs / 60)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffDays > 7) {
+    return `${Math.floor(diffDays / 7)}w ago`
+  } else if (diffDays > 0) {
+    return `${diffDays}d ago`
+  } else if (diffHours > 0) {
+    return `${diffHours}h ago`
+  } else if (diffMins > 0) {
+    return `${diffMins}m ago`
+  } else {
+    return "just now"
+  }
+}
+
 interface UpgradeRecommendationCardProps {
   recommendation: UpgradeRecommendation
   index: number
@@ -23,7 +48,10 @@ export function UpgradeRecommendationCard({
 
   // Get component type for the API call
   const componentType = recommendation.componentType as "cpu" | "gpu" | "ram" | "storage" | "psu"
-  const componentName = `${recommendation.recommendedComponent.brand} ${recommendation.recommendedComponent.model}`
+  // Handle empty brand gracefully (synthetic components like RAM/storage upgrades)
+  const componentName = recommendation.recommendedComponent.brand
+    ? `${recommendation.recommendedComponent.brand} ${recommendation.recommendedComponent.model}`
+    : recommendation.recommendedComponent.model
 
   // Auto-fetch retailer links on mount
   useEffect(() => {
@@ -119,7 +147,14 @@ export function UpgradeRecommendationCard({
                 <div className="text-xl sm:text-2xl font-bold text-primary">
                   ${estimatedPrice.toLocaleString()}
                 </div>
-                <div className="text-xs sm:text-sm text-muted-foreground sm:mt-1">estimated</div>
+                <div className="text-xs sm:text-sm text-muted-foreground sm:mt-1">
+                  estimated
+                  {priceData?.priceUpdatedAt && (
+                    <span className="block text-[10px] opacity-70">
+                      Updated {formatTimeAgo(priceData.priceUpdatedAt)}
+                    </span>
+                  )}
+                </div>
               </>
             ) : (
               <div className="text-xs sm:text-sm text-muted-foreground">

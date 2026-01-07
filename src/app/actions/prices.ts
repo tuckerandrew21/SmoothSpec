@@ -32,6 +32,8 @@ export interface RetailerLinksResult {
   estimatedPrice?: number
   estimatedProductName?: string
   links: RetailerLink[]
+  /** ISO timestamp of when price data was last updated */
+  priceUpdatedAt?: string
 }
 
 /**
@@ -447,30 +449,70 @@ export async function fetchMultiRetailerPricesForComponent(
 }
 
 /**
+ * Build a better search query using matched product brand
+ * Strips "Generic" and uses actual brand from PCPartPicker match
+ */
+function buildSearchQuery(
+  componentName: string,
+  componentType: string,
+  matchedProductName: string | null | undefined
+): string {
+  // Extract brand from matched product: "Crucial Pro 32GB..." → "Crucial"
+  const matchedBrand = matchedProductName?.split(" ")[0]
+
+  // Clean the component name (remove "Generic" prefix)
+  const cleanName = componentName.replace(/^Generic\s+/i, "")
+
+  // For RAM, build a better search: "Crucial DDR5 32GB"
+  if (componentType === "ram" && matchedBrand) {
+    const gbMatch = cleanName.match(/(\d+)\s*GB/i)
+    const gb = gbMatch ? gbMatch[1] + "GB" : ""
+    const ddrMatch = cleanName.match(/DDR(\d)/i)
+    const ddr = ddrMatch ? `DDR${ddrMatch[1]}` : ""
+    return `${matchedBrand} ${ddr} ${gb}`.trim()
+  }
+
+  // For other types, use matched brand + clean name if available
+  if (matchedBrand && !cleanName.toLowerCase().startsWith(matchedBrand.toLowerCase())) {
+    return `${matchedBrand} ${cleanName}`
+  }
+
+  return cleanName
+}
+
+/**
  * Get retailer links for a component by name (MVP: PCPartPicker price + search links)
  * Skips live retailer API calls to avoid rate limits
  * Returns estimated price from PCPartPicker + search URLs for all retailers
+ * Uses matched product brand for better search queries
  */
 export async function getRetailerLinksForComponent(
   componentName: string,
   componentType: "cpu" | "gpu" | "ram" | "storage" | "psu"
 ): Promise<RetailerLinksResult> {
-  const searchUrls = getRetailerSearchUrls(componentName)
-
-  // Get PCPartPicker price only (fast, no rate limits)
+  // Get PCPartPicker price first (need product name for better search)
   let estimatedPrice: number | undefined
   let estimatedProductName: string | undefined
+  let priceUpdatedAt: string | undefined
   try {
     const pcpp = await getComponentPrice(componentType, componentName)
     estimatedPrice = pcpp.price ?? undefined
     estimatedProductName = pcpp.productName ?? undefined
+    priceUpdatedAt = pcpp.updatedAt ?? undefined
   } catch (err) {
     console.warn("[getRetailerLinksForComponent] PCPartPicker lookup failed:", err)
   }
 
+  // Build search query using matched product brand (not "Generic")
+  const searchQuery = buildSearchQuery(componentName, componentType, estimatedProductName)
+  const searchUrls = getRetailerSearchUrls(searchQuery)
+
+  console.log("[getRetailerLinksForComponent] Component:", componentName, "→ Search:", searchQuery)
+
   return {
     estimatedPrice,
     estimatedProductName,
+    priceUpdatedAt,
     links: [
       { retailer: "Best Buy", searchUrl: searchUrls["Best Buy"] },
       { retailer: "Amazon", searchUrl: searchUrls["Amazon"] },

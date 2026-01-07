@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "import-prices": "dotenv -e .env.local -- npx ts-node scripts/import-pcpartpicker.ts",
-    "refresh-prices": "dotenv -e .env.local -- npx ts-node scripts/import-pcpartpicker.ts"
+    "refresh-prices": "dotenv -e .env.local -- npx ts-node scripts/import-pcpartpicker.ts",
+    "test": "dotenv -e .env.local -- vitest",
+    "test:run": "dotenv -e .env.local -- vitest run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -72,6 +74,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.2",
     "dotenv-cli": "^11.0.0",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",

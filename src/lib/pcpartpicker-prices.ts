@@ -13,6 +13,8 @@ export interface PriceResult {
   chipset: string | null
   source: "pcpartpicker"
   specs?: Record<string, unknown>
+  /** ISO timestamp of when price data was last updated */
+  updatedAt?: string
 }
 
 export interface MultiPriceResult {
@@ -41,7 +43,7 @@ export async function getGPUPrice(chipset: string): Promise<PriceResult> {
 
   const { data, error } = await supabase
     .from("pcpartpicker_prices")
-    .select("name, price, chipset, specs")
+    .select("name, price, chipset, specs, updated_at")
     .eq("category", "gpu")
     .ilike("chipset", `%${normalizedChipset}%`)
     .not("price", "is", null)
@@ -58,6 +60,7 @@ export async function getGPUPrice(chipset: string): Promise<PriceResult> {
     chipset: data[0].chipset,
     source: "pcpartpicker",
     specs: data[0].specs,
+    updatedAt: data[0].updated_at,
   }
 }
 
@@ -73,7 +76,7 @@ export async function getGPUPriceRange(chipset: string): Promise<MultiPriceResul
 
   const { data, error } = await supabase
     .from("pcpartpicker_prices")
-    .select("name, price, chipset, specs")
+    .select("name, price, chipset, specs, updated_at")
     .eq("category", "gpu")
     .ilike("chipset", `%${normalizedChipset}%`)
     .not("price", "is", null)
@@ -114,7 +117,7 @@ export async function getCPUPrice(model: string): Promise<PriceResult> {
 
   const { data, error } = await supabase
     .from("pcpartpicker_prices")
-    .select("name, price, chipset, specs")
+    .select("name, price, chipset, specs, updated_at")
     .eq("category", "cpu")
     .ilike("chipset", `%${normalizedModel}%`)
     .not("price", "is", null)
@@ -131,12 +134,15 @@ export async function getCPUPrice(model: string): Promise<PriceResult> {
     chipset: data[0].chipset,
     source: "pcpartpicker",
     specs: data[0].specs,
+    updatedAt: data[0].updated_at,
   }
 }
 
 /**
- * Get lowest price for RAM by specs
+ * Get lowest price for DESKTOP RAM by specs
  * Uses chipset-based search for reliability (indexed column)
+ * For gaming, prioritizes dual-channel kits (2x16GB for 32GB total)
+ * IMPORTANT: Excludes SO-DIMM (laptop) RAM - only returns UDIMM/DIMM (desktop) RAM
  * @param ddrVersion DDR version (4 or 5)
  * @param totalGB Total GB (e.g., 16, 32, 64)
  * @param speedMHz Optional speed in MHz (used in chipset pattern)
@@ -146,54 +152,125 @@ export async function getRAMPrice(
   totalGB: number,
   speedMHz?: number
 ): Promise<PriceResult> {
-  // Build chipset pattern: "DDR5-6000 32GB (2x16GB)" format
-  // Primary search: match DDR version and total GB
-  const chipsetPattern = speedMHz
-    ? `DDR${ddrVersion}-${speedMHz}%${totalGB}GB%`
-    : `DDR${ddrVersion}%${totalGB}GB%`
+  // For gaming, REQUIRE dual-channel kits: "2x16GB" for 32GB total
+  // Single-channel RAM has terrible gaming performance
+  const stickConfig = totalGB >= 16 ? `2x${totalGB / 2}GB` : `${totalGB}GB`
 
+  // Build chipset pattern: "DDR5-6000 32GB (2x16GB)" format
+  // Primary search: dual-channel kit with specific speed
+  const dualChannelPattern = speedMHz
+    ? `DDR${ddrVersion}-${speedMHz}%${totalGB}GB%${stickConfig}%`
+    : `DDR${ddrVersion}%${totalGB}GB%${stickConfig}%`
+
+  // Query for desktop RAM only - fetch multiple results and filter out SO-DIMM
+  // SO-DIMM is laptop RAM which is much cheaper but incompatible with desktops
   const { data, error } = await supabase
     .from("pcpartpicker_prices")
-    .select("name, price, chipset, specs")
+    .select("name, price, chipset, specs, updated_at")
     .eq("category", "ram")
-    .ilike("chipset", chipsetPattern)
+    .ilike("chipset", dualChannelPattern)
     .not("price", "is", null)
     .order("price", { ascending: true })
-    .limit(1)
+    .limit(20) // Fetch more to filter out laptop RAM
 
-  if (error || !data || data.length === 0) {
-    // Broader fallback: just DDR version and GB without speed
-    if (speedMHz) {
-      const broaderPattern = `DDR${ddrVersion}%${totalGB}GB%`
-      const { data: fallbackData } = await supabase
-        .from("pcpartpicker_prices")
-        .select("name, price, chipset, specs")
-        .eq("category", "ram")
-        .ilike("chipset", broaderPattern)
-        .not("price", "is", null)
-        .order("price", { ascending: true })
-        .limit(1)
+  if (data && data.length > 0) {
+    // Filter out SO-DIMM (laptop) RAM
+    // Check for: "SODIMM", "SO-DIMM", "laptop" in name
+    // Also check Crucial model numbers: "S5" suffix = SO-DIMM, "U5" = UDIMM
+    // Also check Silicon Power: "SV" in model = SO-DIMM
+    const desktopRam = data.find((item) => {
+      const name = item.name.toLowerCase()
+      // Explicit laptop indicators
+      if (name.includes("sodimm") || name.includes("so-dimm") || name.includes("laptop")) {
+        return false
+      }
+      // Crucial model pattern: ends with S5 = SO-DIMM DDR5, ends with S4 = SO-DIMM DDR4
+      if (/\b[a-z0-9]+s[45]\b/i.test(item.name) && item.name.includes("Crucial")) {
+        return false
+      }
+      // Silicon Power SO-DIMM pattern: "SV" in model number (e.g., SP032GBSVU560)
+      if (item.name.includes("Silicon Power") && /sv[ue]/i.test(item.name)) {
+        return false
+      }
+      return true
+    })
+    if (desktopRam) {
+      return {
+        price: desktopRam.price,
+        productName: desktopRam.name,
+        chipset: desktopRam.chipset,
+        source: "pcpartpicker",
+        specs: desktopRam.specs,
+        updatedAt: desktopRam.updated_at,
+      }
+    }
+  }
 
-      if (fallbackData && fallbackData.length > 0) {
+  // Fallback 1: dual-channel kit without speed constraint
+  if (speedMHz) {
+    const dualChannelNoSpeed = `DDR${ddrVersion}%${totalGB}GB%${stickConfig}%`
+    const { data: fallback1 } = await supabase
+      .from("pcpartpicker_prices")
+      .select("name, price, chipset, specs, updated_at")
+      .eq("category", "ram")
+      .ilike("chipset", dualChannelNoSpeed)
+      .not("price", "is", null)
+      .order("price", { ascending: true })
+      .limit(20)
+
+    if (fallback1 && fallback1.length > 0) {
+      const desktopRam = fallback1.find((item) => {
+        const name = item.name.toLowerCase()
+        if (name.includes("sodimm") || name.includes("so-dimm") || name.includes("laptop")) return false
+        if (/\b[a-z0-9]+s[45]\b/i.test(item.name) && item.name.includes("Crucial")) return false
+        if (item.name.includes("Silicon Power") && /sv[ue]/i.test(item.name)) return false
+        return true
+      })
+      if (desktopRam) {
         return {
-          price: fallbackData[0].price,
-          productName: fallbackData[0].name,
-          chipset: fallbackData[0].chipset,
+          price: desktopRam.price,
+          productName: desktopRam.name,
+          chipset: desktopRam.chipset,
           source: "pcpartpicker",
-          specs: fallbackData[0].specs,
+          specs: desktopRam.specs,
+          updatedAt: desktopRam.updated_at,
         }
       }
     }
-    return { price: null, productName: null, chipset: null, source: "pcpartpicker" }
   }
 
-  return {
-    price: data[0].price,
-    productName: data[0].name,
-    chipset: data[0].chipset,
-    source: "pcpartpicker",
-    specs: data[0].specs,
+  // Fallback 2: any kit with the right DDR version and capacity (last resort)
+  const anyKitPattern = `DDR${ddrVersion}%${totalGB}GB%`
+  const { data: fallback2 } = await supabase
+    .from("pcpartpicker_prices")
+    .select("name, price, chipset, specs, updated_at")
+    .eq("category", "ram")
+    .ilike("chipset", anyKitPattern)
+    .not("price", "is", null)
+    .order("price", { ascending: true })
+    .limit(20)
+
+  if (fallback2 && fallback2.length > 0) {
+    const desktopRam = fallback2.find((item) => {
+      const name = item.name.toLowerCase()
+      if (name.includes("sodimm") || name.includes("so-dimm") || name.includes("laptop")) return false
+      if (/\b[a-z0-9]+s[45]\b/i.test(item.name) && item.name.includes("Crucial")) return false
+      if (item.name.includes("Silicon Power") && /sv[ue]/i.test(item.name)) return false
+      return true
+    })
+    if (desktopRam) {
+      return {
+        price: desktopRam.price,
+        productName: desktopRam.name,
+        chipset: desktopRam.chipset,
+        source: "pcpartpicker",
+        specs: desktopRam.specs,
+        updatedAt: desktopRam.updated_at,
+      }
+    }
   }
+
+  return { price: null, productName: null, chipset: null, source: "pcpartpicker" }
 }
 
 /**
@@ -214,7 +291,7 @@ export async function getStoragePrice(
 
   const { data, error } = await supabase
     .from("pcpartpicker_prices")
-    .select("name, price, chipset, specs")
+    .select("name, price, chipset, specs, updated_at")
     .eq("category", "storage")
     .ilike("chipset", `%${chipsetPattern}%`)
     .not("price", "is", null)
@@ -226,7 +303,7 @@ export async function getStoragePrice(
     const broadPattern = `${capacityStr}%${type.toUpperCase()}`
     const { data: fallbackData } = await supabase
       .from("pcpartpicker_prices")
-      .select("name, price, chipset, specs")
+      .select("name, price, chipset, specs, updated_at")
       .eq("category", "storage")
       .ilike("chipset", broadPattern)
       .not("price", "is", null)
@@ -243,6 +320,7 @@ export async function getStoragePrice(
       chipset: fallbackData[0].chipset,
       source: "pcpartpicker",
       specs: fallbackData[0].specs,
+      updatedAt: fallbackData[0].updated_at,
     }
   }
 
@@ -252,6 +330,7 @@ export async function getStoragePrice(
     chipset: data[0].chipset,
     source: "pcpartpicker",
     specs: data[0].specs,
+    updatedAt: data[0].updated_at,
   }
 }
 
@@ -267,7 +346,7 @@ export async function getPSUPrice(wattage: number, efficiency?: string): Promise
 
   const { data, error } = await supabase
     .from("pcpartpicker_prices")
-    .select("name, price, chipset, specs")
+    .select("name, price, chipset, specs, updated_at")
     .eq("category", "psu")
     .ilike("chipset", chipsetPattern)
     .not("price", "is", null)
@@ -280,7 +359,7 @@ export async function getPSUPrice(wattage: number, efficiency?: string): Promise
       const broaderPattern = `${wattage}W%`
       const { data: fallbackData } = await supabase
         .from("pcpartpicker_prices")
-        .select("name, price, chipset, specs")
+        .select("name, price, chipset, specs, updated_at")
         .eq("category", "psu")
         .ilike("chipset", broaderPattern)
         .not("price", "is", null)
@@ -294,6 +373,7 @@ export async function getPSUPrice(wattage: number, efficiency?: string): Promise
           chipset: fallbackData[0].chipset,
           source: "pcpartpicker",
           specs: fallbackData[0].specs,
+          updatedAt: fallbackData[0].updated_at,
         }
       }
     }
@@ -306,6 +386,7 @@ export async function getPSUPrice(wattage: number, efficiency?: string): Promise
     chipset: data[0].chipset,
     source: "pcpartpicker",
     specs: data[0].specs,
+    updatedAt: data[0].updated_at,
   }
 }
 
