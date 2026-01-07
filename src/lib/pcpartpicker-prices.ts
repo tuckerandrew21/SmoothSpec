@@ -7,6 +7,20 @@
 
 import { supabase } from "./supabase"
 
+/**
+ * Known GPU chipset aliases for matching seed names to PCPartPicker names
+ * Key: our seed data name, Value: PCPartPicker chipset name
+ */
+const GPU_ALIASES: Record<string, string> = {
+  "GeForce GTX 1650": "GeForce GTX 1650 G6", // GDDR6 version (more common in 2024+)
+}
+
+/**
+ * Regex to strip VRAM suffixes from GPU names for fallback matching
+ * Matches: " 8GB", " 16GB", " 12GB", " 10GB", " 6GB", " 4GB", etc.
+ */
+const VRAM_SUFFIX_REGEX = /\s+\d+GB$/i
+
 export interface PriceResult {
   price: number | null
   productName: string | null
@@ -31,21 +45,14 @@ export interface MultiPriceResult {
 }
 
 /**
- * Get lowest price for a GPU by chipset name
- * @param chipset GPU chipset (e.g., "Radeon RX 7800 XT" or "GeForce RTX 4070")
+ * Helper to query GPU price from Supabase
  */
-export async function getGPUPrice(chipset: string): Promise<PriceResult> {
-  // Normalize chipset name for search
-  const normalizedChipset = chipset
-    .replace(/^AMD\s+/i, "")
-    .replace(/^NVIDIA\s+/i, "")
-    .trim()
-
+async function queryGPUPriceSingle(chipset: string): Promise<PriceResult> {
   const { data, error } = await supabase
     .from("pcpartpicker_prices")
     .select("name, price, chipset, specs, updated_at")
     .eq("category", "gpu")
-    .ilike("chipset", `%${normalizedChipset}%`)
+    .ilike("chipset", `%${chipset}%`)
     .not("price", "is", null)
     .order("price", { ascending: true })
     .limit(1)
@@ -65,20 +72,50 @@ export async function getGPUPrice(chipset: string): Promise<PriceResult> {
 }
 
 /**
- * Get multiple GPU prices for price range display
- * @param chipset GPU chipset (e.g., "Radeon RX 7800 XT")
+ * Get lowest price for a GPU by chipset name
+ * Uses multi-tier matching:
+ * 1. Exact match on normalized chipset
+ * 2. Strip VRAM suffix (e.g., "RTX 4060 Ti 8GB" → "RTX 4060 Ti") and retry
+ * 3. Check known aliases (e.g., "GTX 1650" → "GTX 1650 G6")
+ * @param chipset GPU chipset (e.g., "Radeon RX 7800 XT" or "GeForce RTX 4070")
  */
-export async function getGPUPriceRange(chipset: string): Promise<MultiPriceResult> {
+export async function getGPUPrice(chipset: string): Promise<PriceResult> {
+  // Normalize chipset name for search
   const normalizedChipset = chipset
     .replace(/^AMD\s+/i, "")
     .replace(/^NVIDIA\s+/i, "")
     .trim()
 
+  // Try 1: Direct match
+  let result = await queryGPUPriceSingle(normalizedChipset)
+  if (result.price !== null) return result
+
+  // Try 2: Strip VRAM suffix (e.g., "GeForce RTX 4060 Ti 8GB" → "GeForce RTX 4060 Ti")
+  const withoutVram = normalizedChipset.replace(VRAM_SUFFIX_REGEX, "")
+  if (withoutVram !== normalizedChipset) {
+    result = await queryGPUPriceSingle(withoutVram)
+    if (result.price !== null) return result
+  }
+
+  // Try 3: Check known aliases
+  const alias = GPU_ALIASES[normalizedChipset] || GPU_ALIASES[withoutVram]
+  if (alias) {
+    result = await queryGPUPriceSingle(alias)
+    if (result.price !== null) return result
+  }
+
+  return { price: null, productName: null, chipset: null, source: "pcpartpicker" }
+}
+
+/**
+ * Helper to query multiple GPU prices from Supabase
+ */
+async function queryGPUPriceRange(chipset: string): Promise<MultiPriceResult> {
   const { data, error } = await supabase
     .from("pcpartpicker_prices")
     .select("name, price, chipset, specs, updated_at")
     .eq("category", "gpu")
-    .ilike("chipset", `%${normalizedChipset}%`)
+    .ilike("chipset", `%${chipset}%`)
     .not("price", "is", null)
     .order("price", { ascending: true })
     .limit(20)
@@ -102,6 +139,38 @@ export async function getGPUPriceRange(chipset: string): Promise<MultiPriceResul
     })),
     source: "pcpartpicker",
   }
+}
+
+/**
+ * Get multiple GPU prices for price range display
+ * Uses same multi-tier matching as getGPUPrice
+ * @param chipset GPU chipset (e.g., "Radeon RX 7800 XT")
+ */
+export async function getGPUPriceRange(chipset: string): Promise<MultiPriceResult> {
+  const normalizedChipset = chipset
+    .replace(/^AMD\s+/i, "")
+    .replace(/^NVIDIA\s+/i, "")
+    .trim()
+
+  // Try 1: Direct match
+  let result = await queryGPUPriceRange(normalizedChipset)
+  if (result.products.length > 0) return result
+
+  // Try 2: Strip VRAM suffix
+  const withoutVram = normalizedChipset.replace(VRAM_SUFFIX_REGEX, "")
+  if (withoutVram !== normalizedChipset) {
+    result = await queryGPUPriceRange(withoutVram)
+    if (result.products.length > 0) return result
+  }
+
+  // Try 3: Check known aliases
+  const alias = GPU_ALIASES[normalizedChipset] || GPU_ALIASES[withoutVram]
+  if (alias) {
+    result = await queryGPUPriceRange(alias)
+    if (result.products.length > 0) return result
+  }
+
+  return { lowestPrice: null, highestPrice: null, averagePrice: null, products: [], source: "pcpartpicker" }
 }
 
 /**

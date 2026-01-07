@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "import-prices": "dotenv -e .env.local -- npx ts-node scripts/import-pcpartpicker.ts",
     "refresh-prices": "dotenv -e .env.local -- npx ts-node scripts/import-pcpartpicker.ts",
+    "check-prices": "npx tsx scripts/check-pricing-gaps.ts",
     "test": "dotenv -e .env.local -- vitest",
     "test:run": "dotenv -e .env.local -- vitest run"
   },

@@ -160,7 +160,7 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
 }'::jsonb),
 
 -- NVIDIA RTX 30 Series (Ampere) - HIGH PRIORITY per Steam Hardware Survey
-('gpu', 'NVIDIA', 'GeForce RTX 3060', 2021, 11500, '{
+('gpu', 'NVIDIA', 'GeForce RTX 3060 12GB', 2021, 11500, '{
   "vram": 12,
   "memory_type": "GDDR6",
   "tdp": 170,
@@ -196,7 +196,7 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
   "dlss": 2
 }'::jsonb),
 
-('gpu', 'NVIDIA', 'GeForce RTX 3080', 2020, 21500, '{
+('gpu', 'NVIDIA', 'GeForce RTX 3080 10GB', 2020, 21500, '{
   "vram": 10,
   "memory_type": "GDDR6X",
   "tdp": 320,
@@ -232,7 +232,7 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
   "dlss": 2
 }'::jsonb),
 
-('gpu', 'NVIDIA', 'GeForce RTX 3050', 2022, 9000, '{
+('gpu', 'NVIDIA', 'GeForce RTX 3050 8GB', 2022, 9000, '{
   "vram": 8,
   "memory_type": "GDDR6",
   "tdp": 130,
