@@ -8,6 +8,7 @@ import {
   generateComponentAgeWarnings,
   calculateBuildScore,
   parseRamAmount,
+  parseRamType,
   analyzeStorage,
   analyzePsu,
 } from "@/lib/analysis/engine"
@@ -143,6 +144,7 @@ export function useBuildAnalysis(buildData: BuildData | null) {
           currentCpu: cpu,
           currentGpu: gpu,
           currentRam: userRam,
+          currentRamType: parseRamType(data.ram),
           currentStorage: data.storage,
           perGameAnalysis,
           budget: data.budget,

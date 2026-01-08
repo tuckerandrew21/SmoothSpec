@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ErrorAlert } from "@/components/ui/error-alert"
@@ -27,6 +26,10 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
   // GPU cascading state
   const [gpuBrand, setGpuBrand] = useState<string>("")
   const [gpuFamily, setGpuFamily] = useState<string>("")
+
+  // RAM state
+  const [ramType, setRamType] = useState<string>("")
+  const [ramSize, setRamSize] = useState<string>("")
 
   // Fetch data for cascading dropdowns
   const { brands: cpuBrands, loading: cpuBrandsLoading, error: cpuBrandsError } = useComponentBrands("cpu")
@@ -55,6 +58,15 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
   useEffect(() => {
     updateBuildData({ gpu: "" })
   }, [gpuFamily])
+
+  // Combine RAM type and size into single value
+  useEffect(() => {
+    if (ramType && ramSize) {
+      updateBuildData({ ram: `${ramType}-${ramSize}` })
+    } else {
+      updateBuildData({ ram: "" })
+    }
+  }, [ramType, ramSize])
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -131,10 +143,6 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
               )}
             </div>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="cpuPurchaseDate" className="text-xs sm:text-sm text-muted-foreground">Purchase Date (optional)</Label>
-            <Input id="cpuPurchaseDate" type="date" value={buildData.cpuPurchaseDate || ""} onChange={(e) => updateBuildData({ cpuPurchaseDate: e.target.value })} className="max-w-xs" />
-          </div>
         </div>
 
         {/* GPU Selection - Cascading Dropdowns */}
@@ -204,18 +212,25 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
               )}
             </div>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="gpuPurchaseDate" className="text-xs sm:text-sm text-muted-foreground">Purchase Date (optional)</Label>
-            <Input id="gpuPurchaseDate" type="date" value={buildData.gpuPurchaseDate || ""} onChange={(e) => updateBuildData({ gpuPurchaseDate: e.target.value })} className="max-w-xs" />
-          </div>
         </div>
 
         {/* RAM Selection */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="ram" className="text-xs sm:text-sm text-card-foreground">RAM (Memory)</Label>
-            <Select value={buildData.ram} onValueChange={(value) => updateBuildData({ ram: value })}>
-              <SelectTrigger id="ram"><SelectValue placeholder="Select RAM amount" /></SelectTrigger>
+        <div className="space-y-3">
+          <Label className="text-xs sm:text-sm text-card-foreground">RAM (Memory)</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Select value={ramType} onValueChange={setRamType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ddr4">DDR4</SelectItem>
+                <SelectItem value="ddr5">DDR5</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={ramSize} onValueChange={setRamSize}>
+              <SelectTrigger>
+                <SelectValue placeholder="Size" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="8">8GB</SelectItem>
                 <SelectItem value="16">16GB</SelectItem>
@@ -224,52 +239,36 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="ramPurchaseDate" className="text-xs sm:text-sm text-card-foreground">Purchase Date (optional)</Label>
-            <Input id="ramPurchaseDate" type="date" value={buildData.ramPurchaseDate || ""} onChange={(e) => updateBuildData({ ramPurchaseDate: e.target.value })} />
-          </div>
         </div>
 
         {/* Storage */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="storage" className="text-xs sm:text-sm text-card-foreground">Storage Type</Label>
-            <Select value={buildData.storage} onValueChange={(value) => updateBuildData({ storage: value })}>
-              <SelectTrigger id="storage"><SelectValue placeholder="Select storage type" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="nvme">NVMe SSD</SelectItem>
-                <SelectItem value="sata-ssd">SATA SSD</SelectItem>
-                <SelectItem value="hdd">HDD</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="storagePurchaseDate" className="text-xs sm:text-sm text-card-foreground">Purchase Date (optional)</Label>
-            <Input id="storagePurchaseDate" type="date" value={buildData.storagePurchaseDate || ""} onChange={(e) => updateBuildData({ storagePurchaseDate: e.target.value })} />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="storage" className="text-xs sm:text-sm text-card-foreground">Storage Type</Label>
+          <Select value={buildData.storage} onValueChange={(value) => updateBuildData({ storage: value })}>
+            <SelectTrigger id="storage"><SelectValue placeholder="Select storage type" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="nvme">NVMe SSD</SelectItem>
+              <SelectItem value="sata-ssd">SATA SSD</SelectItem>
+              <SelectItem value="hdd">HDD</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* PSU */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="psu" className="text-xs sm:text-sm text-card-foreground">Power Supply (PSU Wattage)</Label>
-            <Select value={buildData.psu} onValueChange={(value) => updateBuildData({ psu: value })}>
-              <SelectTrigger id="psu"><SelectValue placeholder="Select PSU wattage" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="450">450W</SelectItem>
-                <SelectItem value="550">550W</SelectItem>
-                <SelectItem value="650">650W</SelectItem>
-                <SelectItem value="750">750W</SelectItem>
-                <SelectItem value="850">850W</SelectItem>
-                <SelectItem value="1000">1000W</SelectItem>
-                <SelectItem value="1200">1200W</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="psuPurchaseDate" className="text-xs sm:text-sm text-card-foreground">Purchase Date (optional)</Label>
-            <Input id="psuPurchaseDate" type="date" value={buildData.psuPurchaseDate || ""} onChange={(e) => updateBuildData({ psuPurchaseDate: e.target.value })} />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="psu" className="text-xs sm:text-sm text-card-foreground">Power Supply (PSU Wattage)</Label>
+          <Select value={buildData.psu} onValueChange={(value) => updateBuildData({ psu: value })}>
+            <SelectTrigger id="psu"><SelectValue placeholder="Select PSU wattage" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="450">450W</SelectItem>
+              <SelectItem value="550">550W</SelectItem>
+              <SelectItem value="650">650W</SelectItem>
+              <SelectItem value="750">750W</SelectItem>
+              <SelectItem value="850">850W</SelectItem>
+              <SelectItem value="1000">1000W</SelectItem>
+              <SelectItem value="1200">1200W</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>

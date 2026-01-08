@@ -143,7 +143,8 @@ export function generateRamRecommendation(
   currentRam: number,
   ramDeficit: number,
   affectedGames: GameAnalysis[],
-  budget: number
+  budget: number,
+  ramType: string = 'DDR5'
 ): UpgradeRecommendation | null {
   if (ramDeficit <= 0) {
     return null
@@ -164,15 +165,15 @@ export function generateRamRecommendation(
 
   return {
     componentType: 'ram',
-    currentComponent: `${currentRam}GB RAM`,
+    currentComponent: `${currentRam}GB ${ramType} RAM`,
     recommendedComponent: {
       id: 'ram-upgrade',
       type: 'ram',
       brand: '',  // Empty - will use matched brand from PCPartPicker
-      model: `DDR5 ${recommendedRam}GB Kit`,  // Better search term
-      release_year: 2024,
+      model: `${ramType} ${recommendedRam}GB Kit`,
+      release_year: ramType === 'DDR5' ? 2024 : 2020,
       benchmark_score: recommendedRam * 100,
-      specs: { capacity: recommendedRam, type: 'DDR5' },
+      specs: { capacity: recommendedRam, type: ramType },
     },
     priorityScore: 60,
     priorityLabel: 'Medium',
@@ -240,12 +241,13 @@ export async function generateUpgradeRecommendations(params: {
   currentCpu: Component | null
   currentGpu: Component | null
   currentRam: number
+  currentRamType?: string
   currentStorage?: string
   perGameAnalysis: GameAnalysis[]
   budget: number
   componentAges: ComponentAge[]
 }): Promise<OperationResult<UpgradeRecommendation[]>> {
-  const { currentCpu, currentGpu, currentRam, currentStorage, perGameAnalysis, budget, componentAges } = params
+  const { currentCpu, currentGpu, currentRam, currentRamType = 'DDR5', currentStorage, perGameAnalysis, budget, componentAges } = params
   const recommendations: UpgradeRecommendation[] = []
   const warnings: string[] = []
   const partialFailures: PartialFailure[] = []
@@ -381,7 +383,8 @@ export async function generateUpgradeRecommendations(params: {
       currentRam,
       maxRamDeficit,
       ramDeficitGames,
-      budget
+      budget,
+      currentRamType
     )
     if (ramRec) {
       recommendations.push(ramRec)

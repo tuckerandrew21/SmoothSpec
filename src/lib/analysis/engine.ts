@@ -3,7 +3,7 @@
  * Handles bottleneck analysis, age warnings, and build scoring
  */
 
-import { calculateBottleneck, getComponentAge, getUpgradeUrgency, getCpuTier, getGpuTier } from '../benchmarks'
+import { calculateBottleneck, getCpuTier, getGpuTier } from '../benchmarks'
 import {
   BOTTLENECK_THRESHOLD,
   DEFAULT_BUILD_SCORE,
@@ -103,106 +103,15 @@ export function aggregateGameAnalyses(
 
 /**
  * Generate age-based warnings for components
+ * Note: Currently returns empty array as purchase dates are not collected in MVP
  */
 export function generateComponentAgeWarnings(
-  buildData: BuildData,
-  cpu: Component | null,
-  gpu: Component | null
+  _buildData: BuildData,
+  _cpu: Component | null,
+  _gpu: Component | null
 ): ComponentAge[] {
-  const warnings: ComponentAge[] = []
-
-  // CPU age warning
-  if (buildData.cpuPurchaseDate && cpu) {
-    const purchaseDate = new Date(buildData.cpuPurchaseDate)
-    const ageYears = getComponentAge(purchaseDate)
-    const urgency = getUpgradeUrgency('cpu', ageYears)
-
-    warnings.push({
-      type: 'cpu',
-      componentName: `${cpu.brand} ${cpu.model}`,
-      ageYears,
-      urgency,
-      warning: urgency === 'high'
-        ? `CPU is ${ageYears.toFixed(1)} years old - approaching end of typical gaming lifespan`
-        : urgency === 'medium'
-        ? `CPU is ${ageYears.toFixed(1)} years old - consider planning an upgrade`
-        : undefined,
-    })
-  }
-
-  // GPU age warning
-  if (buildData.gpuPurchaseDate && gpu) {
-    const purchaseDate = new Date(buildData.gpuPurchaseDate)
-    const ageYears = getComponentAge(purchaseDate)
-    const urgency = getUpgradeUrgency('gpu', ageYears)
-
-    warnings.push({
-      type: 'gpu',
-      componentName: `${gpu.brand} ${gpu.model}`,
-      ageYears,
-      urgency,
-      warning: urgency === 'high'
-        ? `GPU is ${ageYears.toFixed(1)} years old - GPUs typically need replacing every 4 years for modern games`
-        : urgency === 'medium'
-        ? `GPU is ${ageYears.toFixed(1)} years old - may struggle with upcoming titles`
-        : undefined,
-    })
-  }
-
-  // RAM age warning
-  if (buildData.ramPurchaseDate) {
-    const purchaseDate = new Date(buildData.ramPurchaseDate)
-    const ageYears = getComponentAge(purchaseDate)
-    const urgency = getUpgradeUrgency('ram', ageYears)
-    const ramAmount = parseInt(buildData.ram, 10) || 16
-
-    warnings.push({
-      type: 'ram',
-      componentName: `${ramAmount}GB RAM`,
-      ageYears,
-      urgency,
-      warning: urgency === 'high'
-        ? `RAM is ${ageYears.toFixed(1)} years old - consider upgrading to newer DDR5 for better performance`
-        : undefined,
-    })
-  }
-
-  // Storage age warning
-  if (buildData.storagePurchaseDate && buildData.storage) {
-    const purchaseDate = new Date(buildData.storagePurchaseDate)
-    const ageYears = getComponentAge(purchaseDate)
-    const urgency = getUpgradeUrgency('storage', ageYears)
-    const storageLabel = STORAGE_LABELS[buildData.storage] || buildData.storage
-
-    warnings.push({
-      type: 'storage',
-      componentName: storageLabel,
-      ageYears,
-      urgency,
-      warning: urgency === 'high'
-        ? `Storage is ${ageYears.toFixed(1)} years old - SSDs can degrade over time, consider replacement`
-        : undefined,
-    })
-  }
-
-  // PSU age warning
-  if (buildData.psuPurchaseDate && buildData.psu) {
-    const purchaseDate = new Date(buildData.psuPurchaseDate)
-    const ageYears = getComponentAge(purchaseDate)
-    const urgency = getUpgradeUrgency('psu', ageYears)
-
-    warnings.push({
-      type: 'psu',
-      componentName: `${buildData.psu}W PSU`,
-      ageYears,
-      urgency,
-      warning: urgency === 'high'
-        ? `PSU is ${ageYears.toFixed(1)} years old - aging PSUs can become unstable and damage components`
-        : undefined,
-    })
-  }
-
-  return warnings
+  // Age warnings disabled - purchase dates not collected in MVP
+  return []
 }
 
 /**
@@ -246,10 +155,31 @@ export function calculateBuildScore(
 
 /**
  * Parse RAM string from BuildData to number
+ * Handles both old format ("16") and new format ("ddr5-16")
  */
 export function parseRamAmount(ramString: string): number {
+  // New format: "ddr5-16" or "ddr4-32"
+  if (ramString.includes('-')) {
+    const size = ramString.split('-')[1]
+    const parsed = parseInt(size, 10)
+    return isNaN(parsed) ? 16 : parsed
+  }
+  // Old format: "16"
   const parsed = parseInt(ramString, 10)
   return isNaN(parsed) ? 16 : parsed // Default to 16GB if parsing fails
+}
+
+/**
+ * Parse RAM type from BuildData
+ * Returns "DDR4" or "DDR5" (uppercase for display)
+ */
+export function parseRamType(ramString: string): string {
+  if (ramString.includes('-')) {
+    const type = ramString.split('-')[0]
+    return type.toUpperCase()
+  }
+  // Default to DDR5 for old format without type
+  return 'DDR5'
 }
 
 /**
