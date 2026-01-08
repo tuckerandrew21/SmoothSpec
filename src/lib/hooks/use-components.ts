@@ -19,31 +19,32 @@ export interface Component {
  */
 export const FAMILY_EXAMPLES: Record<string, string> = {
   // Intel CPUs
-  "14th Gen": "i5-14600K, i7-14700K, i9-14900K",
-  "13th Gen": "i5-13400F, i5-13600K, i7-13700K",
-  "12th Gen": "i5-12400F, i5-12600K, i7-12700K",
-  "10th Gen": "i3-10100F",
+  "14th Gen": "e.g. i7-14700K",
+  "13th Gen": "e.g. i5-13600K",
+  "12th Gen": "e.g. i5-12400F",
+  "10th Gen": "e.g. i3-10100F",
   // AMD CPUs
-  "Ryzen 9000": "Ryzen 5 9600X, Ryzen 7 9700X",
-  "Ryzen 7000": "Ryzen 5 7600, Ryzen 7 7800X3D, Ryzen 9 7950X",
-  "Ryzen 5000": "Ryzen 5 5600X, Ryzen 7 5800X, Ryzen 9 5900X",
-  "Ryzen 3000": "Ryzen 3 3200G, Ryzen 5 3600",
+  "Ryzen 9000": "e.g. Ryzen 7 9700X",
+  "Ryzen 7000": "e.g. Ryzen 7 7800X3D",
+  "Ryzen 5000": "e.g. Ryzen 5 5600X",
+  "Ryzen 3000": "e.g. Ryzen 5 3600",
   // NVIDIA GPUs
-  "RTX 40 Series": "RTX 4060, RTX 4070, RTX 4080, RTX 4090",
-  "RTX 30 Series": "RTX 3060, RTX 3070, RTX 3080, RTX 3090",
-  "GTX 16 Series": "GTX 1650, GTX 1660 Super",
+  "RTX 40 Series": "e.g. RTX 4070",
+  "RTX 30 Series": "e.g. RTX 3070",
+  "GTX 16 Series": "e.g. GTX 1660 Super",
   // AMD GPUs
-  "RX 7000 Series": "RX 7600, RX 7800 XT, RX 7900 XTX",
-  "RX 6000 Series": "RX 6600, RX 6700 XT, RX 6800 XT",
+  "RX 7000 Series": "e.g. RX 7800 XT",
+  "RX 6000 Series": "e.g. RX 6700 XT",
 }
 
-interface Game {
+export interface Game {
   id: string
   name: string
   steam_id: string | null
   cpu_weight: number
   gpu_weight: number
   ram_requirement: number
+  recommended_specs?: Record<string, string>
 }
 
 export function useComponents(type: "cpu" | "gpu" | "ram" | "storage" | "psu") {
@@ -267,4 +268,40 @@ export function getSystemDemand(cpuWeight: number, gpuWeight: number): string {
   if (avgWeight >= 1.1) return "High"
   if (avgWeight >= 0.9) return "Medium"
   return "Low"
+}
+
+/**
+ * Hook to fetch all CPUs and GPUs for weight derivation
+ */
+export function useAllCpusAndGpus() {
+  const [cpus, setCpus] = useState<Component[]>([])
+  const [gpus, setGpus] = useState<Component[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchAll() {
+      setLoading(true)
+      setError(null)
+      try {
+        const [cpuResult, gpuResult] = await Promise.all([
+          supabase.from("components").select("*").eq("type", "cpu"),
+          supabase.from("components").select("*").eq("type", "gpu"),
+        ])
+
+        if (cpuResult.error) throw cpuResult.error
+        if (gpuResult.error) throw gpuResult.error
+
+        setCpus(cpuResult.data || [])
+        setGpus(gpuResult.data || [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load components")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAll()
+  }, [])
+
+  return { cpus, gpus, loading, error }
 }
