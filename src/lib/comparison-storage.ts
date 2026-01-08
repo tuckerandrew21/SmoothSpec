@@ -36,6 +36,24 @@ export function saveBuildForComparison(
 }
 
 /**
+ * Migrate old builds to include new required fields
+ * Called when loading builds from storage
+ */
+function migrateBuildData(data: Partial<BuildData>): BuildData {
+  return {
+    cpu: data.cpu ?? "",
+    gpu: data.gpu ?? "",
+    ram: data.ram ?? "",
+    storage: data.storage ?? "",
+    psu: data.psu ?? "",
+    games: data.games ?? [],
+    budget: data.budget ?? 500,
+    // Default resolution for old builds saved before this feature
+    resolution: data.resolution ?? "1440p",
+  }
+}
+
+/**
  * Get a saved build
  */
 export function getSavedBuild(slot: "a" | "b"): StoredBuild | null {
@@ -47,7 +65,12 @@ export function getSavedBuild(slot: "a" | "b"): StoredBuild | null {
   if (!stored) return null
 
   try {
-    return JSON.parse(stored) as StoredBuild
+    const parsed = JSON.parse(stored) as { data: Partial<BuildData>; savedAt: number; label?: string }
+    // Migrate old builds to include resolution field
+    return {
+      ...parsed,
+      data: migrateBuildData(parsed.data),
+    }
   } catch {
     return null
   }

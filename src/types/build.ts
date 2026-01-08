@@ -1,3 +1,5 @@
+import type { Resolution } from "@/lib/resolution-modifier"
+
 export interface BuildData {
   cpu: string
   gpu: string
@@ -6,4 +8,5 @@ export interface BuildData {
   psu: string
   games: string[]
   budget: number
+  resolution: Resolution
 }

@@ -12,6 +12,7 @@ import {
   FAMILY_EXAMPLES,
 } from "@/lib/hooks/use-components"
 import type { BuildData } from "@/types/build"
+import type { Resolution } from "@/lib/resolution-modifier"
 
 interface ComponentsStepProps {
   buildData: BuildData
@@ -69,21 +70,25 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
   }, [ramType, ramSize])
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6">
       <div>
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-card-foreground">Tell us about your PC</h2>
         <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">Enter your current hardware components</p>
       </div>
 
-      <div className="space-y-4 sm:space-y-6">
-        {/* CPU Selection - Cascading Dropdowns */}
-        <div className="space-y-3">
-          <Label className="text-xs sm:text-sm text-card-foreground">CPU (Processor)</Label>
+      {/* Core Components Section */}
+      <div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-5">
+        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Core Components
+        </h3>
+
+        {/* CPU Selection */}
+        <div className="space-y-2">
+          <Label className="text-sm text-card-foreground font-medium">CPU (Processor)</Label>
           {cpuBrandsError || cpusError ? (
             <ErrorAlert message="Failed to load CPUs" />
           ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {/* Brand */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {cpuBrandsLoading ? (
                 <Skeleton className="h-10 w-full rounded-md" />
               ) : (
@@ -99,7 +104,6 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
                 </Select>
               )}
 
-              {/* Family */}
               {cpuFamiliesLoading ? (
                 <Skeleton className="h-10 w-full rounded-md" />
               ) : (
@@ -122,7 +126,6 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
                 </Select>
               )}
 
-              {/* Model */}
               {cpusLoading ? (
                 <Skeleton className="h-10 w-full rounded-md" />
               ) : (
@@ -145,14 +148,13 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
           )}
         </div>
 
-        {/* GPU Selection - Cascading Dropdowns */}
-        <div className="space-y-3">
-          <Label className="text-xs sm:text-sm text-card-foreground">GPU (Graphics Card)</Label>
+        {/* GPU Selection */}
+        <div className="space-y-2">
+          <Label className="text-sm text-card-foreground font-medium">GPU (Graphics Card)</Label>
           {gpuBrandsError || gpusError ? (
             <ErrorAlert message="Failed to load GPUs" />
           ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {/* Brand */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {gpuBrandsLoading ? (
                 <Skeleton className="h-10 w-full rounded-md" />
               ) : (
@@ -168,7 +170,6 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
                 </Select>
               )}
 
-              {/* Series */}
               {gpuFamiliesLoading ? (
                 <Skeleton className="h-10 w-full rounded-md" />
               ) : (
@@ -191,7 +192,6 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
                 </Select>
               )}
 
-              {/* Model */}
               {gpusLoading ? (
                 <Skeleton className="h-10 w-full rounded-md" />
               ) : (
@@ -213,62 +213,113 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
             </div>
           )}
         </div>
+      </div>
 
-        {/* RAM Selection */}
-        <div className="space-y-3">
-          <Label className="text-xs sm:text-sm text-card-foreground">RAM (Memory)</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <Select value={ramType} onValueChange={setRamType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ddr4">DDR4</SelectItem>
-                <SelectItem value="ddr5">DDR5</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={ramSize} onValueChange={setRamSize}>
-              <SelectTrigger>
-                <SelectValue placeholder="Size" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="8">8GB</SelectItem>
-                <SelectItem value="16">16GB</SelectItem>
-                <SelectItem value="32">32GB</SelectItem>
-                <SelectItem value="64">64GB</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Secondary Components - Two Column Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Memory Section */}
+        <div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-4">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Memory
+          </h3>
+
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label className="text-sm text-card-foreground">RAM Type</Label>
+              <Select value={ramType} onValueChange={setRamType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ddr4">DDR4</SelectItem>
+                  <SelectItem value="ddr5">DDR5</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-card-foreground">RAM Size</Label>
+              <Select value={ramSize} onValueChange={setRamSize}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select size" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="8">8GB</SelectItem>
+                  <SelectItem value="16">16GB</SelectItem>
+                  <SelectItem value="32">32GB</SelectItem>
+                  <SelectItem value="64">64GB</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
-        {/* Storage */}
-        <div className="space-y-2">
-          <Label htmlFor="storage" className="text-xs sm:text-sm text-card-foreground">Storage Type</Label>
-          <Select value={buildData.storage} onValueChange={(value) => updateBuildData({ storage: value })}>
-            <SelectTrigger id="storage"><SelectValue placeholder="Select storage type" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="nvme">NVMe SSD</SelectItem>
-              <SelectItem value="sata-ssd">SATA SSD</SelectItem>
-              <SelectItem value="hdd">HDD</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Storage & Power Section */}
+        <div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-4">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Storage & Power
+          </h3>
 
-        {/* PSU */}
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="storage" className="text-sm text-card-foreground">Storage Type</Label>
+              <Select value={buildData.storage} onValueChange={(value) => updateBuildData({ storage: value })}>
+                <SelectTrigger id="storage">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nvme">NVMe SSD</SelectItem>
+                  <SelectItem value="sata-ssd">SATA SSD</SelectItem>
+                  <SelectItem value="hdd">HDD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="psu" className="text-sm text-card-foreground">PSU Wattage</Label>
+              <Select value={buildData.psu} onValueChange={(value) => updateBuildData({ psu: value })}>
+                <SelectTrigger id="psu">
+                  <SelectValue placeholder="Select wattage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="450">450W</SelectItem>
+                  <SelectItem value="550">550W</SelectItem>
+                  <SelectItem value="650">650W</SelectItem>
+                  <SelectItem value="750">750W</SelectItem>
+                  <SelectItem value="850">850W</SelectItem>
+                  <SelectItem value="1000">1000W</SelectItem>
+                  <SelectItem value="1200">1200W</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Display Section */}
+      <div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-4">
+        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Display
+        </h3>
+
         <div className="space-y-2">
-          <Label htmlFor="psu" className="text-xs sm:text-sm text-card-foreground">Power Supply (PSU Wattage)</Label>
-          <Select value={buildData.psu} onValueChange={(value) => updateBuildData({ psu: value })}>
-            <SelectTrigger id="psu"><SelectValue placeholder="Select PSU wattage" /></SelectTrigger>
+          <Label htmlFor="resolution" className="text-sm text-card-foreground">Gaming Resolution</Label>
+          <Select
+            value={buildData.resolution}
+            onValueChange={(value: Resolution) => updateBuildData({ resolution: value })}
+          >
+            <SelectTrigger id="resolution" className="w-full sm:w-48">
+              <SelectValue placeholder="Select resolution" />
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem value="450">450W</SelectItem>
-              <SelectItem value="550">550W</SelectItem>
-              <SelectItem value="650">650W</SelectItem>
-              <SelectItem value="750">750W</SelectItem>
-              <SelectItem value="850">850W</SelectItem>
-              <SelectItem value="1000">1000W</SelectItem>
-              <SelectItem value="1200">1200W</SelectItem>
+              <SelectItem value="1080p">1080p (Full HD)</SelectItem>
+              <SelectItem value="1440p">1440p (QHD)</SelectItem>
+              <SelectItem value="4k">4K (Ultra HD)</SelectItem>
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground">
+            Higher resolutions shift bottlenecks toward GPU, lower resolutions toward CPU.
+          </p>
         </div>
       </div>
     </div>

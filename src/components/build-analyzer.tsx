@@ -33,6 +33,7 @@ export function BuildAnalyzer() {
     psu: "",
     games: [],
     budget: 500,
+    resolution: "1440p",
   })
 
   const totalSteps = 3

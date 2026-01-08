@@ -111,13 +111,14 @@ export function useBuildAnalysis(buildData: BuildData | null) {
         // Parse RAM amount
         const userRam = parseRamAmount(data.ram)
 
-        // Run per-game analysis
+        // Run per-game analysis with resolution modifier
         const perGameAnalysis = games.map((game) =>
           analyzeGamePerformance(
             cpu?.benchmark_score || 0,
             gpu?.benchmark_score || 0,
             userRam,
-            game
+            game,
+            data.resolution
           )
         )
 

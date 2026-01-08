@@ -57,3 +57,23 @@ Use **Steam Hardware Survey** to prioritize which components to add:
 For games, use **SteamCharts** (steamcharts.com) to identify most-played titles.
 
 This ensures we cover hardware that actual gamers use, not just the latest releases.
+
+### Game CPU/GPU Weights
+
+Each game has `cpu_weight` and `gpu_weight` values (0.5-1.5 scale) that determine whether it's CPU-bound or GPU-bound.
+
+**Full methodology:** See `docs/GAME_WEIGHTS_METHODOLOGY.md`
+
+**Quick reference:**
+
+- Weights are calibrated for 1440p resolution (adjusted at runtime for 1080p/4K)
+- Data comes from YouTube benchmark channels (Digital Foundry, Hardware Unboxed)
+- Higher weight = more important for that game
+- Example: Valorant (cpu=1.3, gpu=0.7) is CPU-heavy; Cyberpunk (cpu=0.9, gpu=1.4) is GPU-heavy
+
+**When adding new games:**
+
+1. Search for CPU/GPU scaling benchmarks on YouTube
+2. Apply the conversion formula in the methodology doc
+3. Add source comment in games.sql
+4. Validate with the bottleneck calculator UI

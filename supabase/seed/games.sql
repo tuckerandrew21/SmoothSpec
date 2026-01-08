@@ -5,6 +5,7 @@
 INSERT INTO games (name, steam_id, cpu_weight, gpu_weight, ram_requirement, recommended_specs) VALUES
 
 -- GPU-Heavy AAA Games
+-- Source: GameGPU v2.1 benchmarks (2023), TechSpot (2020) - GPU scaling dominates, CPU upgrades show minimal FPS gains
 ('Cyberpunk 2077', '1091500', 0.9, 1.4, 16, '{
   "min_cpu": "Intel Core i7-6700",
   "rec_cpu": "Intel Core i7-12700",
@@ -13,12 +14,13 @@ INSERT INTO games (name, steam_id, cpu_weight, gpu_weight, ram_requirement, reco
   "notes": "Very GPU intensive with ray tracing"
 }'::jsonb),
 
-('Hogwarts Legacy', '990080', 0.85, 1.4, 16, '{
+-- Source: TechSpot GPU benchmarks (2023) - CPU-bound at 1080p/1440p, RTX 4090 capped at 136 FPS. DX12 driver overhead on Nvidia.
+('Hogwarts Legacy', '990080', 1.1, 1.2, 16, '{
   "min_cpu": "Intel Core i5-8400",
   "rec_cpu": "Intel Core i7-10700K",
   "min_gpu": "GTX 1080 Ti",
   "rec_gpu": "RTX 3090",
-  "notes": "Open world with demanding visuals"
+  "notes": "CPU-bound at lower resolutions due to engine limitations"
 }'::jsonb),
 
 ('Red Dead Redemption 2', '1174180', 1.0, 1.3, 12, '{
@@ -29,12 +31,13 @@ INSERT INTO games (name, steam_id, cpu_weight, gpu_weight, ram_requirement, reco
   "notes": "Well optimized but still demanding"
 }'::jsonb),
 
-('Elden Ring', '1245620', 0.9, 1.2, 16, '{
+-- Source: TechPowerUp, DSO Gaming (2024) - 40% GPU-idle at 1080p, 29% at 1440p. CPU-bound at lower res, GPU-bound at 4K.
+('Elden Ring', '1245620', 1.1, 1.1, 16, '{
   "min_cpu": "Intel Core i5-8400",
   "rec_cpu": "Intel Core i7-8700K",
   "min_gpu": "GTX 1060 3GB",
   "rec_gpu": "RTX 3070",
-  "notes": "Open world action RPG"
+  "notes": "Balanced, but CPU-bound at 1080p/1440p"
 }'::jsonb),
 
 ('Alan Wake 2', '2654510', 0.85, 1.5, 16, '{
@@ -45,6 +48,7 @@ INSERT INTO games (name, steam_id, cpu_weight, gpu_weight, ram_requirement, reco
   "notes": "Extremely GPU demanding, requires RT"
 }'::jsonb),
 
+-- Source: GamersNexus GPU benchmarks (2023) - High-end GPUs hit CPU ceiling at ~90 FPS, balanced workload
 ('Baldurs Gate 3', '1086940', 1.1, 1.1, 16, '{
   "min_cpu": "Intel Core i5-4690",
   "rec_cpu": "Intel Core i7-8700K",
@@ -62,37 +66,42 @@ INSERT INTO games (name, steam_id, cpu_weight, gpu_weight, ram_requirement, reco
   "notes": "Very CPU intensive simulation"
 }'::jsonb),
 
-('Cities: Skylines II', '949230', 1.5, 1.0, 16, '{
+-- Source: GamersNexus benchmarks (2023) - Poorly optimized, RTX 4090 stuck at 40 FPS 4K/low. GPU-bound despite genre expectation.
+-- RAM: Community reports severe stuttering with 16GB on large cities, 32GB recommended
+('Cities: Skylines II', '949230', 1.0, 1.3, 32, '{
   "min_cpu": "Intel Core i7-6700K",
   "rec_cpu": "Intel Core i5-12600K",
   "min_gpu": "GTX 970",
   "rec_gpu": "RTX 3080",
-  "notes": "City simulation is very CPU bound"
+  "notes": "GPU-bound due to poor optimization, excessive polygon count. 32GB RAM strongly recommended."
 }'::jsonb),
 
-('Starfield', '1716740', 1.2, 1.3, 16, '{
+-- Source: GamersNexus CPU benchmarks (2023) - Very CPU-bound even at 4K. Uses 8 cores efficiently. GPU underutilized.
+('Starfield', '1716740', 1.3, 1.1, 16, '{
   "min_cpu": "AMD Ryzen 5 2600X",
   "rec_cpu": "AMD Ryzen 5 3600X",
   "min_gpu": "GTX 1070",
   "rec_gpu": "RTX 2080",
-  "notes": "Bethesda open world RPG"
+  "notes": "CPU-bound Bethesda engine, benefits from fast multi-core CPU"
 }'::jsonb),
 
-('Total War: WARHAMMER III', '1142710', 1.4, 1.1, 16, '{
+-- Source: TechPowerUp, KitGuru (2022) - Demanding on both CPU and GPU. Quad-core minimum, powerful GPU needed for Ultra.
+('Total War: WARHAMMER III', '1142710', 1.3, 1.2, 16, '{
   "min_cpu": "Intel Core i5-6600",
   "rec_cpu": "Intel Core i7-8700K",
   "min_gpu": "GTX 1660",
   "rec_gpu": "RTX 3070",
-  "notes": "Large scale battles are CPU heavy"
+  "notes": "Large scale battles demand both CPU and GPU"
 }'::jsonb),
 
 -- Competitive/Esports (Balanced, but benefit from high FPS)
-('Counter-Strike 2', '730', 1.2, 0.9, 8, '{
+-- Source: Steam community benchmarks, thinglabs (2024) - CPU bottleneck at 1080p, 200+ FPS requires fast CPU. 7800X3D shows 2x FPS over older CPUs.
+('Counter-Strike 2', '730', 1.3, 0.8, 8, '{
   "min_cpu": "Intel Core i5-2400",
   "rec_cpu": "Intel Core i7",
   "min_gpu": "GTX 1050 Ti",
   "rec_gpu": "RTX 2070",
-  "notes": "Competitive FPS, high FPS preferred"
+  "notes": "Competitive FPS, very CPU-bound at high FPS targets"
 }'::jsonb),
 
 ('Valorant', '', 1.3, 0.7, 8, '{
@@ -103,20 +112,22 @@ INSERT INTO games (name, steam_id, cpu_weight, gpu_weight, ram_requirement, reco
   "notes": "Optimized for wide hardware range"
 }'::jsonb),
 
-('Apex Legends', '1172470', 1.1, 1.0, 8, '{
+-- Source: GamersNexus, DSO Gaming - GPU-bound (unusual for competitive shooter). Scales well with resolution.
+('Apex Legends', '1172470', 1.0, 1.1, 8, '{
   "min_cpu": "Intel Core i3-6300",
   "rec_cpu": "Intel Core i5-3570K",
   "min_gpu": "GTX 640",
   "rec_gpu": "GTX 970",
-  "notes": "Battle royale, benefits from CPU"
+  "notes": "GPU-bound competitive shooter, scales well with resolution"
 }'::jsonb),
 
+-- Source: CapFrameX CPU tests, ComputerBase (2024) - GPU-bound at Epic settings, CPU-limited at low/performance mode. Balanced for typical play.
 ('Fortnite', '', 1.0, 1.0, 16, '{
   "min_cpu": "Intel Core i3-3225",
   "rec_cpu": "Intel Core i5-7300U",
   "min_gpu": "Intel HD 4000",
   "rec_gpu": "GTX 960",
-  "notes": "Well optimized for all hardware"
+  "notes": "Well optimized, balanced CPU/GPU scaling"
 }'::jsonb),
 
 -- VR Games (High requirements)
@@ -194,12 +205,13 @@ INSERT INTO games (name, steam_id, cpu_weight, gpu_weight, ram_requirement, reco
   "notes": "Well optimized open world"
 }'::jsonb),
 
-('God of War', '1593500', 0.9, 1.2, 8, '{
+-- Source: TechPowerUp, DSO Gaming - GPU-bound title. Requires at least quad-core with HT, can use 8 cores.
+('God of War', '1593500', 0.9, 1.3, 8, '{
   "min_cpu": "Intel Core i5-2500K",
   "rec_cpu": "Intel Core i7-4770K",
   "min_gpu": "GTX 960",
   "rec_gpu": "GTX 1060 6GB",
-  "notes": "Action adventure with stunning visuals"
+  "notes": "GPU-bound action adventure, well optimized"
 }'::jsonb),
 
 ('The Witcher 3: Wild Hunt', '292030', 0.9, 1.2, 8, '{
@@ -307,12 +319,13 @@ INSERT INTO games (name, steam_id, cpu_weight, gpu_weight, ram_requirement, reco
   "notes": "Large scale battle royale"
 }'::jsonb),
 
-('Escape from Tarkov', '1422440', 1.3, 1.1, 16, '{
+-- RAM: Community consensus - 16GB is bare minimum, 32GB needed for Streets/Lighthouse maps without stuttering
+('Escape from Tarkov', '1422440', 1.3, 1.1, 32, '{
   "min_cpu": "Intel Core i5-2500K",
   "rec_cpu": "Intel Core i7-8700",
   "min_gpu": "GTX 660 2GB",
   "rec_gpu": "GTX 1060",
-  "notes": "Hardcore tactical shooter, CPU heavy"
+  "notes": "Hardcore tactical shooter, CPU heavy. 32GB RAM recommended for large maps."
 }'::jsonb),
 
 -- Open World / Sandbox
@@ -332,12 +345,13 @@ INSERT INTO games (name, steam_id, cpu_weight, gpu_weight, ram_requirement, reco
   "notes": "Procedural space exploration"
 }'::jsonb),
 
-('ARK: Survival Evolved', '346110', 1.2, 1.3, 16, '{
+-- RAM: Community reports - 16GB causes frequent stuttering, 32GB recommended especially with mods
+('ARK: Survival Evolved', '346110', 1.2, 1.3, 32, '{
   "min_cpu": "Intel Core i5-2400",
   "rec_cpu": "Intel Core i5-4670K",
   "min_gpu": "GTX 670 2GB",
   "rec_gpu": "GTX 970 4GB",
-  "notes": "Survival game with demanding graphics"
+  "notes": "Survival game with demanding graphics. 32GB RAM recommended, especially with mods."
 }'::jsonb),
 
 ('Rust', '252490', 1.2, 1.1, 16, '{

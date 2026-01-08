@@ -13,19 +13,34 @@ import {
   POWER_ESTIMATES,
   PSU_HEADROOM,
 } from '../constants'
+import { adjustWeightsForResolution, type Resolution } from '../resolution-modifier'
 import type { BuildData } from '@/types/build'
 import type { Component, Game, GameAnalysis, ComponentAge, StorageAnalysis, PsuAnalysis } from '@/types/analysis'
 
 /**
  * Analyze performance for a single game given user's hardware
+ *
+ * @param cpuScore - User's CPU benchmark score
+ * @param gpuScore - User's GPU benchmark score
+ * @param userRam - User's RAM in GB
+ * @param game - Game with base weights (calibrated for 1440p)
+ * @param resolution - User's gaming resolution (affects CPU/GPU weight balance)
  */
 export function analyzeGamePerformance(
   cpuScore: number,
   gpuScore: number,
   userRam: number,
-  game: Game
+  game: Game,
+  resolution: Resolution = '1440p'
 ): GameAnalysis {
-  const bottleneck = calculateBottleneck(cpuScore, gpuScore, game.cpu_weight, game.gpu_weight)
+  // Apply resolution modifier to base game weights
+  const { cpuWeight, gpuWeight } = adjustWeightsForResolution(
+    game.cpu_weight,
+    game.gpu_weight,
+    resolution
+  )
+
+  const bottleneck = calculateBottleneck(cpuScore, gpuScore, cpuWeight, gpuWeight)
 
   const ramSufficient = userRam >= game.ram_requirement
   const ramDeficit = ramSufficient ? 0 : game.ram_requirement - userRam
