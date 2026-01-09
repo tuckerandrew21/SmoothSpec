@@ -47,3 +47,6 @@ next-env.d.ts
 
 # Temp files
 env.download
+
+# Supabase CLI state
+supabase/.temp/
