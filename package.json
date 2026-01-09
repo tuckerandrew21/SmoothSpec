@@ -12,7 +12,10 @@
     "test:watch": "dotenv -e .env.local -- vitest",
     "import-prices": "dotenv -e .env.local -- npx ts-node scripts/import-pcpartpicker.ts",
     "refresh-prices": "dotenv -e .env.local -- npx ts-node scripts/import-pcpartpicker.ts",
-    "check-prices": "npx tsx scripts/check-pricing-gaps.ts"
+    "check-prices": "npx tsx scripts/check-pricing-gaps.ts",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -69,6 +72,7 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
     "@types/react": "^19",
