@@ -8,13 +8,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "dotenv -e .env.local -- vitest run",
+    "test:watch": "dotenv -e .env.local -- vitest",
     "import-prices": "dotenv -e .env.local -- npx ts-node scripts/import-pcpartpicker.ts",
     "refresh-prices": "dotenv -e .env.local -- npx ts-node scripts/import-pcpartpicker.ts",
-    "check-prices": "npx tsx scripts/check-pricing-gaps.ts",
-    "test": "dotenv -e .env.local -- vitest",
-    "test:run": "dotenv -e .env.local -- vitest run"
+    "check-prices": "npx tsx scripts/check-pricing-gaps.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
