@@ -45,6 +45,9 @@ export const SCORE_DEDUCTIONS = {
 // Default build score when no games selected
 export const DEFAULT_BUILD_SCORE = 50
 
+// "Good build" threshold - no upgrades recommended above this score
+export const GOOD_BUILD_THRESHOLD = 80
+
 // Priority label thresholds
 export const PRIORITY_THRESHOLDS = {
   high: 70,
@@ -60,7 +63,7 @@ export const RAM_UPGRADE_COSTS: Record<number, number> = {
 
 // Best Buy API configuration
 export const API_CONFIG = {
-  cacheTtlHours: 24,
+  cacheTtlHours: 168, // 7 days - prices are refreshed daily via seed/cron job
   rateLimit: 4, // Requests per second (stay under 5/sec limit)
 } as const
 

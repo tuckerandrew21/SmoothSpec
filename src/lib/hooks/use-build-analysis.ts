@@ -16,11 +16,24 @@ import { generateUpgradeRecommendations } from "@/lib/analysis/recommendations"
 import { assessDataQuality, type PartialFailure } from "@/lib/errors"
 import type { BuildData } from "@/types/build"
 import type { Component, Game, BuildAnalysisResult } from "@/types/analysis"
+import type { Resolution } from "@/lib/resolution-modifier"
+
+export interface FetchedComponents {
+  cpu: Component | null
+  gpu: Component | null
+}
+
+export interface MultiResolutionAnalysis {
+  "1080p": BuildAnalysisResult
+  "1440p": BuildAnalysisResult
+  "4k": BuildAnalysisResult
+}
 
 export function useBuildAnalysis(buildData: BuildData | null) {
-  const [analysis, setAnalysis] = useState<BuildAnalysisResult | null>(null)
+  const [analyses, setAnalyses] = useState<MultiResolutionAnalysis | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [components, setComponents] = useState<FetchedComponents>({ cpu: null, gpu: null })
   const hasRun = useRef(false)
 
   // Stringify for stable dependency comparison
@@ -111,95 +124,113 @@ export function useBuildAnalysis(buildData: BuildData | null) {
         // Parse RAM amount
         const userRam = parseRamAmount(data.ram)
 
-        // Run per-game analysis with resolution modifier
-        const perGameAnalysis = games.map((game) =>
-          analyzeGamePerformance(
-            cpu?.benchmark_score || 0,
-            gpu?.benchmark_score || 0,
-            userRam,
-            game,
-            data.resolution
-          )
-        )
-
-        // Aggregate results
-        const aggregateBottleneck = aggregateGameAnalyses(perGameAnalysis)
-
-        // Generate age warnings
+        // Generate age warnings (shared across resolutions)
         const componentAges = generateComponentAgeWarnings(data, cpu, gpu)
 
-        // Analyze storage performance
+        // Analyze storage performance (shared across resolutions)
         const storageAnalysis = data.storage ? analyzeStorage(data.storage) : null
 
-        // Analyze PSU adequacy
+        // Analyze PSU adequacy (shared across resolutions)
         const psuWattage = parseInt(data.psu, 10) || 0
         const psuAnalysis = psuWattage > 0
           ? analyzePsu(psuWattage, cpu?.benchmark_score || 0, gpu?.benchmark_score || 0)
           : null
 
-        // Calculate build score
-        const buildScore = calculateBuildScore(perGameAnalysis, componentAges)
-
-        // Generate upgrade recommendations
-        const recommendationsResult = await generateUpgradeRecommendations({
-          currentCpu: cpu,
-          currentGpu: gpu,
-          currentRam: userRam,
-          currentRamType: parseRamType(data.ram),
-          currentStorage: data.storage,
-          perGameAnalysis,
-          budget: data.budget,
-          componentAges,
-        })
-
-        // Merge warnings and failures from recommendations
-        analysisWarnings.push(...recommendationsResult.warnings)
-        partialFailures.push(...recommendationsResult.partialFailures)
-
-        // Compile all warnings (age-based + analysis + edge cases)
-        const warnings = [
-          ...analysisWarnings,
-          ...componentAges
-            .filter((age) => age.warning)
-            .map((age) => age.warning!),
-        ]
-
-        // Handle edge cases
-        if (perGameAnalysis.length === 0) {
-          warnings.push("No games selected. Add games to get specific recommendations.")
-        }
-
-        if (recommendationsResult.data.length === 0 && perGameAnalysis.length > 0) {
-          if (aggregateBottleneck.component === "balanced") {
-            warnings.push("Your build is well-balanced for your selected games!")
-          } else {
-            warnings.push(
-              `No upgrades found within your $${data.budget} budget. Consider increasing your budget for better options.`
+        // Helper function to build analysis for a specific resolution
+        async function buildAnalysisForResolution(resolution: Resolution): Promise<BuildAnalysisResult> {
+          // Run per-game analysis with resolution modifier
+          const perGameAnalysis = games.map((game) =>
+            analyzeGamePerformance(
+              cpu?.benchmark_score || 0,
+              gpu?.benchmark_score || 0,
+              userRam,
+              game,
+              resolution
             )
+          )
+
+          // Aggregate results
+          const aggregateBottleneck = aggregateGameAnalyses(perGameAnalysis)
+
+          // Calculate build score
+          const buildScore = calculateBuildScore(perGameAnalysis, componentAges)
+
+          // Generate upgrade recommendations for this resolution
+          const recommendationsResult = await generateUpgradeRecommendations({
+            currentCpu: cpu,
+            currentGpu: gpu,
+            currentRam: userRam,
+            currentRamType: parseRamType(data.ram),
+            currentStorage: data.storage,
+            perGameAnalysis,
+            budget: data.budget,
+            componentAges,
+          })
+
+          // Compile warnings for this resolution
+          const resolutionWarnings = [...analysisWarnings]
+          resolutionWarnings.push(...recommendationsResult.warnings)
+          resolutionWarnings.push(
+            ...componentAges
+              .filter((age) => age.warning)
+              .map((age) => age.warning!)
+          )
+
+          // Handle edge cases
+          if (perGameAnalysis.length === 0) {
+            resolutionWarnings.push("No games selected. Add games to get specific recommendations.")
+          }
+
+          if (recommendationsResult.data.length === 0 && perGameAnalysis.length > 0) {
+            if (aggregateBottleneck.component === "balanced") {
+              resolutionWarnings.push("Your build is well-balanced for your selected games!")
+            } else {
+              resolutionWarnings.push(
+                `No upgrades found within your $${data.budget} budget. Consider increasing your budget for better options.`
+              )
+            }
+          }
+
+          // Add storage warning if HDD
+          if (storageAnalysis?.needsUpgrade) {
+            resolutionWarnings.push(storageAnalysis.recommendation)
+          }
+
+          // Add PSU warning if insufficient
+          if (psuAnalysis && !psuAnalysis.sufficient) {
+            resolutionWarnings.push(psuAnalysis.recommendation)
+          }
+
+          const resolutionFailures = [...partialFailures, ...recommendationsResult.partialFailures]
+
+          return {
+            buildScore,
+            perGameAnalysis,
+            aggregateBottleneck,
+            componentAges,
+            storageAnalysis,
+            psuAnalysis,
+            recommendations: recommendationsResult.data,
+            warnings: resolutionWarnings,
+            dataQuality: assessDataQuality(resolutionFailures),
+            partialFailures: resolutionFailures,
           }
         }
 
-        // Add storage warning if HDD
-        if (storageAnalysis?.needsUpgrade) {
-          warnings.push(storageAnalysis.recommendation)
-        }
+        // Run analysis for all three resolutions in parallel
+        const [analysis1080p, analysis1440p, analysis4k] = await Promise.all([
+          buildAnalysisForResolution("1080p"),
+          buildAnalysisForResolution("1440p"),
+          buildAnalysisForResolution("4k"),
+        ])
 
-        // Add PSU warning if insufficient
-        if (psuAnalysis && !psuAnalysis.sufficient) {
-          warnings.push(psuAnalysis.recommendation)
-        }
+        // Store the fetched components for display
+        setComponents({ cpu, gpu })
 
-        setAnalysis({
-          buildScore,
-          perGameAnalysis,
-          aggregateBottleneck,
-          componentAges,
-          storageAnalysis,
-          psuAnalysis,
-          recommendations: recommendationsResult.data,
-          warnings,
-          dataQuality: assessDataQuality(partialFailures),
-          partialFailures,
+        setAnalyses({
+          "1080p": analysis1080p,
+          "1440p": analysis1440p,
+          "4k": analysis4k,
         })
       } catch (err) {
         console.error("Analysis error:", err)
@@ -213,5 +244,5 @@ export function useBuildAnalysis(buildData: BuildData | null) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildDataKey])
 
-  return { analysis, loading, error }
+  return { analyses, loading, error, components }
 }

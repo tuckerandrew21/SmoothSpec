@@ -1,5 +1,17 @@
 # SmoothSpec - Claude Code Instructions
 
+## Mission
+
+**Help gamers figure out where to spend their money.**
+
+PC hardware is expensive. Users come to SmoothSpec with a limited budget and specific games they play. Our job is to tell them exactly which upgrade will give them the biggest performance improvement *for their games* at *their budget*.
+
+Every feature should ask: "Does this help users make smarter purchasing decisions?"
+
+**Core value prop:** "Stop guessing. Know exactly what to upgrade."
+
+---
+
 ## GitHub Account
 
 This repository uses the `tuckerandrew21` GitHub account, NOT `andrew-tucker-razorvision`.

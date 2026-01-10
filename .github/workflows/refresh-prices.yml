@@ -1,4 +1,4 @@
-name: Refresh PCPartPicker Prices
+name: Refresh Prices
 
 on:
   schedule:
@@ -10,7 +10,7 @@ on:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -25,14 +25,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Refresh PCPartPicker prices
-        run: npx ts-node scripts/import-pcpartpicker.ts
+      - name: Sync retailer prices (Best Buy API + PCPartPicker estimates)
+        run: npx tsx scripts/sync-bestbuy-prices.ts
         env:
           # Required secrets - add these in GitHub repo Settings > Secrets and variables > Actions
           # NEXT_PUBLIC_SUPABASE_URL: Your Supabase project URL (e.g., https://xxx.supabase.co)
           # SUPABASE_SERVICE_ROLE_KEY: Your Supabase service role key (from API settings)
+          # BESTBUY_API_KEY: Best Buy API key (from developer.bestbuy.com)
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BESTBUY_API_KEY: ${{ secrets.BESTBUY_API_KEY }}
 
       - name: Summary
         run: echo "Price refresh completed at $(date -u)"

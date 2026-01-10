@@ -51,6 +51,12 @@ export interface PriceInfo {
   onSale?: boolean
 }
 
+export interface UpgradeCandidate {
+  component: Component
+  estimatedPerformanceGain: number
+  seedPrice: number // Price used for filtering (from our DB)
+}
+
 export interface UpgradeRecommendation {
   componentType: 'cpu' | 'gpu' | 'ram' | 'storage' | 'psu'
   currentComponent: string
@@ -61,6 +67,8 @@ export interface UpgradeRecommendation {
   reason: string
   affectedGames: string[] // Game names where this upgrade helps most
   prices: PriceInfo[]
+  // Alternative candidates for fallback if primary is over budget
+  alternatives?: UpgradeCandidate[]
 }
 
 export interface StorageAnalysis {

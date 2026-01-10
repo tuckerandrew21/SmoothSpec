@@ -5,19 +5,39 @@
 
 import { supabase } from '../supabase'
 import { calculateUpgradePriority } from '../benchmarks'
-import { BOTTLENECK_THRESHOLD, PRIORITY_THRESHOLDS, RAM_UPGRADE_COSTS } from '../constants'
+import { BOTTLENECK_THRESHOLD, PRIORITY_THRESHOLDS, RAM_UPGRADE_COSTS, COMPONENT_LIFESPANS } from '../constants'
 import type { OperationResult, PartialFailure } from '../errors'
 import type { Component, GameAnalysis, ComponentAge, UpgradeRecommendation } from '@/types/analysis'
+
+/**
+ * Check if a component is past its expected gaming lifespan
+ */
+function isComponentAged(releaseYear: number | undefined, componentType: 'cpu' | 'gpu'): boolean {
+  if (!releaseYear) return false
+  const currentYear = new Date().getFullYear()
+  const age = currentYear - releaseYear
+  const lifespan = COMPONENT_LIFESPANS[componentType]
+  return age >= lifespan
+}
 
 /**
  * Find upgrade candidates for a component type within budget
  * Returns OperationResult to surface any errors that occurred
  */
+// Candidate with seed price for client-side budget validation
+export interface CandidateWithPrice {
+  component: Component
+  seedPrice: number
+}
+
+// How many alternative candidates to return (sorted by performance, descending)
+const MAX_CANDIDATES = 3
+
 export async function findUpgradeCandidates(
   currentBenchmarkScore: number,
   budget: number,
   componentType: 'cpu' | 'gpu'
-): Promise<OperationResult<Component[]>> {
+): Promise<OperationResult<CandidateWithPrice[]>> {
   const warnings: string[] = []
   const partialFailures: PartialFailure[] = []
 
@@ -55,10 +75,8 @@ export async function findUpgradeCandidates(
     })
   }
 
-  // Filter components that have at least one price within budget
-  const affordableComponents: Component[] = []
+  // Build price map (lowest price per component)
   const priceMap = new Map<string, number>()
-
   if (prices) {
     for (const price of prices) {
       const existing = priceMap.get(price.component_id)
@@ -68,14 +86,24 @@ export async function findUpgradeCandidates(
     }
   }
 
+  // Filter components that have at least one price within budget
+  // Include seed price for client-side real-price validation
+  const affordableCandidates: CandidateWithPrice[] = []
   for (const comp of components) {
     const lowestPrice = priceMap.get(comp.id)
     if (lowestPrice !== undefined && lowestPrice <= budget) {
-      affordableComponents.push(comp as Component)
+      affordableCandidates.push({
+        component: comp as Component,
+        seedPrice: lowestPrice,
+      })
     }
   }
 
-  return { data: affordableComponents, warnings, partialFailures }
+  // Return top N candidates by performance (highest benchmark scores)
+  // They're already sorted ascending, so we take from the end
+  const topCandidates = affordableCandidates.slice(-MAX_CANDIDATES).reverse()
+
+  return { data: topCandidates, warnings, partialFailures }
 }
 
 /**
@@ -266,8 +294,9 @@ export async function generateUpgradeRecommendations(params: {
   const ramDeficitGames = perGameAnalysis.filter((a) => !a.ramSufficient)
   const maxRamDeficit = Math.max(...perGameAnalysis.map((a) => a.ramDeficit), 0)
 
-  // GPU Upgrade recommendation
-  if (currentGpu && gpuBottleneckGames.length > 0) {
+  // GPU Upgrade recommendation - trigger on bottleneck OR component age
+  const gpuIsAged = currentGpu && isComponentAged(currentGpu.release_year, 'gpu')
+  if (currentGpu && (gpuBottleneckGames.length > 0 || gpuIsAged)) {
     const gpuResult = await findUpgradeCandidates(
       currentGpu.benchmark_score,
       budget,
@@ -278,28 +307,66 @@ export async function generateUpgradeRecommendations(params: {
     warnings.push(...gpuResult.warnings)
     partialFailures.push(...gpuResult.partialFailures)
 
+    const currentYear = new Date().getFullYear()
+    const gpuAgeYears = currentGpu.release_year ? currentYear - currentGpu.release_year : 0
+    const gpuAge = componentAges.find((a) => a.type === 'gpu')
+
     if (gpuResult.data.length > 0) {
-      // Pick the best value candidate (highest score within budget)
-      const recommended = gpuResult.data[gpuResult.data.length - 1]
-      const lowestPrice = await getLowestPrice(recommended.id)
+      // Primary candidate is the best performer (first in the list, sorted desc by performance)
+      const primaryCandidate = gpuResult.data[0]
+      const recommended = primaryCandidate.component
+      const lowestPrice = primaryCandidate.seedPrice
       const performanceGain = Math.round(
         ((recommended.benchmark_score - currentGpu.benchmark_score) /
           currentGpu.benchmark_score) *
           100
       )
 
-      const gpuAge = componentAges.find((a) => a.type === 'gpu')
-      const avgBottleneck =
-        gpuBottleneckGames.reduce((sum, g) => sum + g.bottleneck.percentage, 0) /
-        gpuBottleneckGames.length
+      // Build alternatives array (remaining candidates)
+      const alternatives = gpuResult.data.slice(1).map((candidate) => ({
+        component: candidate.component,
+        estimatedPerformanceGain: Math.round(
+          ((candidate.component.benchmark_score - currentGpu.benchmark_score) /
+            currentGpu.benchmark_score) *
+            100
+        ),
+        seedPrice: candidate.seedPrice,
+      }))
 
-      const priorityScore = calculateUpgradePriority({
-        bottleneckPercentage: avgBottleneck,
-        ageYears: gpuAge?.ageYears || 0,
-        componentType: 'gpu',
-        estimatedCost: lowestPrice || budget,
-        performanceGain: recommended.benchmark_score - currentGpu.benchmark_score,
-      })
+      // For age-only recommendations (no bottleneck), use lower priority
+      const avgBottleneck = gpuBottleneckGames.length > 0
+        ? gpuBottleneckGames.reduce((sum, g) => sum + g.bottleneck.percentage, 0) / gpuBottleneckGames.length
+        : 0
+
+      const priorityScore = gpuBottleneckGames.length > 0
+        ? calculateUpgradePriority({
+            bottleneckPercentage: avgBottleneck,
+            ageYears: gpuAge?.ageYears || 0,
+            componentType: 'gpu',
+            estimatedCost: lowestPrice || budget,
+            performanceGain: recommended.benchmark_score - currentGpu.benchmark_score,
+          })
+        : Math.min(50, calculateUpgradePriority({
+            bottleneckPercentage: 0,
+            ageYears: gpuAgeYears,
+            componentType: 'gpu',
+            estimatedCost: lowestPrice || budget,
+            performanceGain: recommended.benchmark_score - currentGpu.benchmark_score,
+          }))
+
+      // Generate reason - different for age-based vs bottleneck-based
+      const reason = gpuBottleneckGames.length > 0
+        ? generateRecommendationReason(
+            'gpu',
+            `${currentGpu.brand} ${currentGpu.model}`,
+            recommended,
+            gpuBottleneckGames,
+            performanceGain,
+            gpuAge
+          )
+        : `Your ${currentGpu.brand} ${currentGpu.model} is ${gpuAgeYears} years old. ` +
+          `GPUs typically remain competitive for ${COMPONENT_LIFESPANS.gpu} years. ` +
+          `Upgrading to ${recommended.brand} ${recommended.model} offers ~${performanceGain}% improvement.`
 
       recommendations.push({
         componentType: 'gpu',
@@ -308,22 +375,43 @@ export async function generateUpgradeRecommendations(params: {
         priorityScore,
         priorityLabel: getPriorityLabel(priorityScore),
         estimatedPerformanceGain: performanceGain,
-        reason: generateRecommendationReason(
-          'gpu',
-          `${currentGpu.brand} ${currentGpu.model}`,
-          recommended,
-          gpuBottleneckGames,
-          performanceGain,
-          gpuAge
-        ),
+        reason,
+        affectedGames: gpuBottleneckGames.map((a) => a.game.name),
+        prices: [],
+        alternatives: alternatives.length > 0 ? alternatives : undefined,
+      })
+    } else if (gpuIsAged) {
+      // Fallback for age-based recommendation when no specific products found
+      // Create a generic recommendation without a specific upgrade target
+      const priorityScore = Math.min(50, 20 + gpuAgeYears * 5) // Base 20 + 5 per year of age
+
+      recommendations.push({
+        componentType: 'gpu',
+        currentComponent: `${currentGpu.brand} ${currentGpu.model}`,
+        recommendedComponent: {
+          id: 'gpu-upgrade-generic',
+          type: 'gpu',
+          brand: '',
+          model: 'Modern GPU',
+          release_year: currentYear,
+          benchmark_score: currentGpu.benchmark_score * 2, // Estimate 2x improvement
+          specs: {},
+        },
+        priorityScore,
+        priorityLabel: getPriorityLabel(priorityScore),
+        estimatedPerformanceGain: 100, // Conservative estimate
+        reason: `Your ${currentGpu.brand} ${currentGpu.model} is ${gpuAgeYears} years old. ` +
+          `GPUs typically remain competitive for ${COMPONENT_LIFESPANS.gpu} years. ` +
+          `Consider browsing current-generation GPUs for a significant performance upgrade.`,
         affectedGames: gpuBottleneckGames.map((a) => a.game.name),
         prices: [],
       })
     }
   }
 
-  // CPU Upgrade recommendation
-  if (currentCpu && cpuBottleneckGames.length > 0) {
+  // CPU Upgrade recommendation - trigger on bottleneck OR component age
+  const cpuIsAged = currentCpu && isComponentAged(currentCpu.release_year, 'cpu')
+  if (currentCpu && (cpuBottleneckGames.length > 0 || cpuIsAged)) {
     const cpuResult = await findUpgradeCandidates(
       currentCpu.benchmark_score,
       budget,
@@ -334,27 +422,66 @@ export async function generateUpgradeRecommendations(params: {
     warnings.push(...cpuResult.warnings)
     partialFailures.push(...cpuResult.partialFailures)
 
+    const currentYear = new Date().getFullYear()
+    const cpuAgeYears = currentCpu.release_year ? currentYear - currentCpu.release_year : 0
+    const cpuAge = componentAges.find((a) => a.type === 'cpu')
+
     if (cpuResult.data.length > 0) {
-      const recommended = cpuResult.data[cpuResult.data.length - 1]
-      const lowestPrice = await getLowestPrice(recommended.id)
+      // Primary candidate is the best performer (first in the list, sorted desc by performance)
+      const primaryCandidate = cpuResult.data[0]
+      const recommended = primaryCandidate.component
+      const lowestPrice = primaryCandidate.seedPrice
       const performanceGain = Math.round(
         ((recommended.benchmark_score - currentCpu.benchmark_score) /
           currentCpu.benchmark_score) *
           100
       )
 
-      const cpuAge = componentAges.find((a) => a.type === 'cpu')
-      const avgBottleneck =
-        cpuBottleneckGames.reduce((sum, g) => sum + g.bottleneck.percentage, 0) /
-        cpuBottleneckGames.length
+      // Build alternatives array (remaining candidates)
+      const alternatives = cpuResult.data.slice(1).map((candidate) => ({
+        component: candidate.component,
+        estimatedPerformanceGain: Math.round(
+          ((candidate.component.benchmark_score - currentCpu.benchmark_score) /
+            currentCpu.benchmark_score) *
+            100
+        ),
+        seedPrice: candidate.seedPrice,
+      }))
 
-      const priorityScore = calculateUpgradePriority({
-        bottleneckPercentage: avgBottleneck,
-        ageYears: cpuAge?.ageYears || 0,
-        componentType: 'cpu',
-        estimatedCost: lowestPrice || budget,
-        performanceGain: recommended.benchmark_score - currentCpu.benchmark_score,
-      })
+      // For age-only recommendations (no bottleneck), use lower priority
+      const avgBottleneck = cpuBottleneckGames.length > 0
+        ? cpuBottleneckGames.reduce((sum, g) => sum + g.bottleneck.percentage, 0) / cpuBottleneckGames.length
+        : 0
+
+      const priorityScore = cpuBottleneckGames.length > 0
+        ? calculateUpgradePriority({
+            bottleneckPercentage: avgBottleneck,
+            ageYears: cpuAge?.ageYears || 0,
+            componentType: 'cpu',
+            estimatedCost: lowestPrice || budget,
+            performanceGain: recommended.benchmark_score - currentCpu.benchmark_score,
+          })
+        : Math.min(50, calculateUpgradePriority({
+            bottleneckPercentage: 0,
+            ageYears: cpuAgeYears,
+            componentType: 'cpu',
+            estimatedCost: lowestPrice || budget,
+            performanceGain: recommended.benchmark_score - currentCpu.benchmark_score,
+          }))
+
+      // Generate reason - different for age-based vs bottleneck-based
+      const reason = cpuBottleneckGames.length > 0
+        ? generateRecommendationReason(
+            'cpu',
+            `${currentCpu.brand} ${currentCpu.model}`,
+            recommended,
+            cpuBottleneckGames,
+            performanceGain,
+            cpuAge
+          )
+        : `Your ${currentCpu.brand} ${currentCpu.model} is ${cpuAgeYears} years old. ` +
+          `CPUs typically remain competitive for ${COMPONENT_LIFESPANS.cpu} years. ` +
+          `Upgrading to ${recommended.brand} ${recommended.model} offers ~${performanceGain}% improvement.`
 
       recommendations.push({
         componentType: 'cpu',
@@ -363,14 +490,34 @@ export async function generateUpgradeRecommendations(params: {
         priorityScore,
         priorityLabel: getPriorityLabel(priorityScore),
         estimatedPerformanceGain: performanceGain,
-        reason: generateRecommendationReason(
-          'cpu',
-          `${currentCpu.brand} ${currentCpu.model}`,
-          recommended,
-          cpuBottleneckGames,
-          performanceGain,
-          cpuAge
-        ),
+        reason,
+        affectedGames: cpuBottleneckGames.map((a) => a.game.name),
+        prices: [],
+        alternatives: alternatives.length > 0 ? alternatives : undefined,
+      })
+    } else if (cpuIsAged) {
+      // Fallback for age-based recommendation when no specific products found
+      // Create a generic recommendation without a specific upgrade target
+      const priorityScore = Math.min(50, 20 + cpuAgeYears * 5) // Base 20 + 5 per year of age
+
+      recommendations.push({
+        componentType: 'cpu',
+        currentComponent: `${currentCpu.brand} ${currentCpu.model}`,
+        recommendedComponent: {
+          id: 'cpu-upgrade-generic',
+          type: 'cpu',
+          brand: '',
+          model: 'Modern CPU',
+          release_year: currentYear,
+          benchmark_score: currentCpu.benchmark_score * 2, // Estimate 2x improvement
+          specs: {},
+        },
+        priorityScore,
+        priorityLabel: getPriorityLabel(priorityScore),
+        estimatedPerformanceGain: 100, // Conservative estimate
+        reason: `Your ${currentCpu.brand} ${currentCpu.model} is ${cpuAgeYears} years old. ` +
+          `CPUs typically remain competitive for ${COMPONENT_LIFESPANS.cpu} years. ` +
+          `Consider browsing current-generation CPUs for a significant performance upgrade.`,
         affectedGames: cpuBottleneckGames.map((a) => a.game.name),
         prices: [],
       })

@@ -86,14 +86,22 @@ async function getCachedPrices(
   componentName: string,
   componentType: string
 ): Promise<PriceInfo[] | null> {
-  const cacheKey = `${componentType}:${componentName}`.toLowerCase()
+  // Strip common brand prefixes for better matching
+  // e.g., "Intel Core i7-14700K" -> "Core i7-14700K"
+  // e.g., "AMD Ryzen 7 5800X3D" -> "Ryzen 7 5800X3D"
+  // e.g., "NVIDIA GeForce RTX 4070" -> "GeForce RTX 4070"
+  const normalizedName = componentName
+    .replace(/^Intel\s+/i, "")
+    .replace(/^AMD\s+/i, "")
+    .replace(/^NVIDIA\s+/i, "")
+    .trim()
 
   // Look up component in prices table by searching component name
   const { data: components } = await supabase
     .from("components")
     .select("id, brand, model")
     .eq("type", componentType)
-    .ilike("model", `%${componentName}%`)
+    .ilike("model", `%${normalizedName}%`)
     .limit(1)
 
   if (!components || components.length === 0) {
@@ -126,58 +134,25 @@ async function getCachedPrices(
 }
 
 /**
- * Fetch prices from Best Buy API and cache them
+ * Fetch prices from database cache
+ * Prices are populated daily via seed/cron job - no real-time API calls
  */
 export async function fetchComponentPrices(
   componentName: string,
   componentType: "cpu" | "gpu" | "ram"
 ): Promise<PriceInfo[]> {
   try {
-    // Check cache first
+    // Return cached prices from database
     const cached = await getCachedPrices(componentName, componentType)
     if (cached) {
       return cached
     }
 
-    // Check if API key is available
-    if (!process.env.BESTBUY_API_KEY) {
-      console.warn("Best Buy API key not configured")
-      return []
-    }
-
-    const client = new BestBuyClient(process.env.BESTBUY_API_KEY)
-
-    // Fetch from Best Buy based on component type
-    const products = await rateLimiter.throttle(async () => {
-      switch (componentType) {
-        case "cpu":
-          return await client.searchCPUs(componentName)
-        case "gpu":
-          return await client.searchGPUs(componentName)
-        case "ram":
-          return await client.searchRAM(componentName)
-        default:
-          return []
-      }
-    })
-
-    if (!products || products.length === 0) {
-      return []
-    }
-
-    // Format and return prices with affiliate tracking
-    return products.map((product) => {
-      const formatted = formatBestBuyPrice(product)
-      return {
-        retailer: formatted.retailer,
-        price: formatted.price,
-        url: client.buildAffiliateUrl(formatted.affiliateUrl),
-        inStock: formatted.inStock,
-        onSale: formatted.onSale,
-      }
-    })
+    // No cache hit - return empty (prices will be populated by daily job)
+    console.log(`[fetchComponentPrices] No cached price for: ${componentName} (${componentType})`)
+    return []
   } catch (error) {
-    console.error("Error fetching Best Buy prices:", error)
+    console.error("Error fetching cached prices:", error)
     return []
   }
 }

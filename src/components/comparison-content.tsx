@@ -223,16 +223,20 @@ export function ComparisonContent() {
   }, [])
 
   const {
-    analysis: analysisA,
+    analyses: analysesA,
     loading: loadingA,
     error: errorA,
   } = useBuildAnalysis(builds.buildA?.data ?? null)
 
   const {
-    analysis: analysisB,
+    analyses: analysesB,
     loading: loadingB,
     error: errorB,
   } = useBuildAnalysis(builds.buildB?.data ?? null)
+
+  // Get analysis for each build's resolution
+  const analysisA = analysesA?.[builds.buildA?.data?.resolution ?? "1440p"] ?? null
+  const analysisB = analysesB?.[builds.buildB?.data?.resolution ?? "1440p"] ?? null
 
   const handleClearBuilds = () => {
     clearAllSavedBuilds()
