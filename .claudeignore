@@ -1,0 +1,13 @@
+# Claude Code ignore file
+# Excludes files from context injection via system-reminders
+
+# Large seed files (manually seeded, rarely edited)
+supabase/seed/**/*.sql
+
+# Documentation (not needed for most coding tasks)
+docs/**
+
+# Generated files
+.next/
+node_modules/
+coverage/
