@@ -61,6 +61,180 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
   "integrated_graphics": false
 }'::jsonb),
 
+-- Intel 11th Gen (Rocket Lake) - 2021
+-- Source: PassMark CPU benchmarks (January 2026)
+('cpu', 'Intel', 'Core i9-11900K', 2021, 24978, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.5,
+  "boost_clock": 5.3,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i9-11900KF', 2021, 24557, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.5,
+  "boost_clock": 5.3,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i7-11700K', 2021, 24350, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.6,
+  "boost_clock": 5.0,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i7-11700KF', 2021, 23823, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.6,
+  "boost_clock": 5.0,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-11600K', 2021, 19516, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.9,
+  "boost_clock": 4.9,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-11600KF', 2021, 19466, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.9,
+  "boost_clock": 4.9,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": false
+}'::jsonb),
+
+-- Intel 10th Gen (Comet Lake) - 2020
+-- Source: PassMark CPU benchmarks (January 2026)
+('cpu', 'Intel', 'Core i9-10900K', 2020, 22365, '{
+  "cores": 10,
+  "threads": 20,
+  "base_clock": 3.7,
+  "boost_clock": 5.3,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i9-10900KF', 2020, 22226, '{
+  "cores": 10,
+  "threads": 20,
+  "base_clock": 3.7,
+  "boost_clock": 5.3,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i7-10700K', 2020, 18553, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.8,
+  "boost_clock": 5.1,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i7-10700KF', 2020, 18363, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.8,
+  "boost_clock": 5.1,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i7-10700', 2020, 16052, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 2.9,
+  "boost_clock": 4.8,
+  "tdp": 65,
+  "socket": "LGA1200",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-10600K', 2020, 14240, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 4.1,
+  "boost_clock": 4.8,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-10600KF', 2020, 14134, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 4.1,
+  "boost_clock": 4.8,
+  "tdp": 125,
+  "socket": "LGA1200",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-10600', 2020, 13570, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.3,
+  "boost_clock": 4.8,
+  "tdp": 65,
+  "socket": "LGA1200",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-10400F', 2020, 12111, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 2.9,
+  "boost_clock": 4.3,
+  "tdp": 65,
+  "socket": "LGA1200",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-10400', 2020, 11984, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 2.9,
+  "boost_clock": 4.3,
+  "tdp": 65,
+  "socket": "LGA1200",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i3-10300', 2020, 9290, '{
+  "cores": 4,
+  "threads": 8,
+  "base_clock": 3.7,
+  "boost_clock": 4.4,
+  "tdp": 65,
+  "socket": "LGA1200",
+  "integrated_graphics": true
+}'::jsonb),
+
 -- =============================================================================
 -- RECENT GENERATION (2023-2024)
 -- =============================================================================
