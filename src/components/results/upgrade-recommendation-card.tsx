@@ -8,6 +8,7 @@ import { TrendingUp, ExternalLink, Loader2, AlertTriangle, PiggyBank, ChevronDow
 import type { UpgradeRecommendation, UpgradeCandidate, Component } from "@/types/analysis"
 import { fetchComponentPrices, getRetailerLinksForComponent, type RetailerLinksResult } from "@/app/actions/prices"
 import { trackAffiliateClicked } from "@/lib/analytics"
+import { ValueCurveChart } from "./value-curve-chart"
 
 /**
  * Format a timestamp as "X days ago", "X hours ago", etc.
@@ -68,6 +69,7 @@ export function UpgradeRecommendationCard({
   const [candidatePrices, setCandidatePrices] = useState<CandidatePriceData[]>([])
   const [loadingPrices, setLoadingPrices] = useState(true)
   const [showGameBreakdown, setShowGameBreakdown] = useState(false)
+  const [showValueCurve, setShowValueCurve] = useState(false)
 
   const componentType = recommendation.componentType as "cpu" | "gpu" | "ram" | "storage" | "psu"
 
@@ -446,6 +448,34 @@ export function UpgradeRecommendationCard({
                     </span>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Value Curve Chart */}
+        {recommendation.candidatesWithValue && recommendation.candidatesWithValue.length > 2 && recommendation.sweetSpotIndex !== undefined && (
+          <div className="border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={() => setShowValueCurve(!showValueCurve)}
+              className="flex items-center gap-2 text-xs sm:text-sm font-medium text-card-foreground hover:text-primary transition-colors"
+            >
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${showValueCurve ? 'rotate-180' : ''}`}
+              />
+              View Value Analysis
+            </button>
+            {showValueCurve && (
+              <div className="mt-4">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4">
+                  The sweet spot offers the best performance per dollar.
+                  Options beyond it show diminishing returns.
+                </p>
+                <ValueCurveChart
+                  candidates={recommendation.candidatesWithValue}
+                  sweetSpotIndex={recommendation.sweetSpotIndex}
+                />
               </div>
             )}
           </div>

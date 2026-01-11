@@ -7,7 +7,7 @@ import { supabase } from '../supabase'
 import { calculateUpgradePriority, calculateBottleneck } from '../benchmarks'
 import { BOTTLENECK_THRESHOLD, PRIORITY_THRESHOLDS, RAM_UPGRADE_COSTS, COMPONENT_LIFESPANS } from '../constants'
 import type { OperationResult, PartialFailure } from '../errors'
-import type { Component, GameAnalysis, ComponentAge, UpgradeRecommendation, UpgradePathWarning } from '@/types/analysis'
+import type { Component, GameAnalysis, ComponentAge, UpgradeRecommendation, UpgradePathWarning, UpgradeCandidate } from '@/types/analysis'
 
 /**
  * Check if a component is past its expected gaming lifespan
@@ -518,6 +518,26 @@ export async function generateUpgradeRecommendations(params: {
         seedPrice: candidate.seedPrice,
       }))
 
+      // Calculate value scores for all candidates (for diminishing returns visualization)
+      const allCandidates: UpgradeCandidate[] = [
+        {
+          component: recommended,
+          estimatedPerformanceGain: performanceGain,
+          seedPrice: lowestPrice,
+        },
+        ...alternatives,
+      ]
+
+      const candidatesWithValue = allCandidates.map((candidate) => ({
+        ...candidate,
+        valueScore: candidate.seedPrice > 0 ? (candidate.estimatedPerformanceGain / candidate.seedPrice) * 100 : 0,
+      }))
+
+      // Find sweet spot (highest value score)
+      const sweetSpotIndex = candidatesWithValue.reduce((maxIdx, candidate, idx, arr) =>
+        candidate.valueScore > arr[maxIdx].valueScore ? idx : maxIdx
+      , 0)
+
       // For age-only recommendations (no bottleneck), use lower priority
       const avgBottleneck = gpuBottleneckGames.length > 0
         ? gpuBottleneckGames.reduce((sum, g) => sum + g.bottleneck.percentage, 0) / gpuBottleneckGames.length
@@ -565,6 +585,8 @@ export async function generateUpgradeRecommendations(params: {
         prices: [],
         alternatives: alternatives.length > 0 ? alternatives : undefined,
         perGameImpact: calculatePerGameImpact('gpu', performanceGain, perGameAnalysis),
+        candidatesWithValue: candidatesWithValue.length > 2 ? candidatesWithValue : undefined,
+        sweetSpotIndex: candidatesWithValue.length > 2 ? sweetSpotIndex : undefined,
       }
 
       // Detect if this upgrade creates a new bottleneck
@@ -650,6 +672,26 @@ export async function generateUpgradeRecommendations(params: {
         seedPrice: candidate.seedPrice,
       }))
 
+      // Calculate value scores for all candidates (for diminishing returns visualization)
+      const allCandidates: UpgradeCandidate[] = [
+        {
+          component: recommended,
+          estimatedPerformanceGain: performanceGain,
+          seedPrice: lowestPrice,
+        },
+        ...alternatives,
+      ]
+
+      const candidatesWithValue = allCandidates.map((candidate) => ({
+        ...candidate,
+        valueScore: candidate.seedPrice > 0 ? (candidate.estimatedPerformanceGain / candidate.seedPrice) * 100 : 0,
+      }))
+
+      // Find sweet spot (highest value score)
+      const sweetSpotIndex = candidatesWithValue.reduce((maxIdx, candidate, idx, arr) =>
+        candidate.valueScore > arr[maxIdx].valueScore ? idx : maxIdx
+      , 0)
+
       // For age-only recommendations (no bottleneck), use lower priority
       const avgBottleneck = cpuBottleneckGames.length > 0
         ? cpuBottleneckGames.reduce((sum, g) => sum + g.bottleneck.percentage, 0) / cpuBottleneckGames.length
@@ -697,6 +739,8 @@ export async function generateUpgradeRecommendations(params: {
         prices: [],
         alternatives: alternatives.length > 0 ? alternatives : undefined,
         perGameImpact: calculatePerGameImpact('cpu', performanceGain, perGameAnalysis),
+        candidatesWithValue: candidatesWithValue.length > 2 ? candidatesWithValue : undefined,
+        sweetSpotIndex: candidatesWithValue.length > 2 ? sweetSpotIndex : undefined,
       }
 
       // Detect if this upgrade creates a new bottleneck

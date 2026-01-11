@@ -55,6 +55,7 @@ export interface UpgradeCandidate {
   component: Component
   estimatedPerformanceGain: number
   seedPrice: number // Price used for filtering (from our DB)
+  valueScore?: number // Performance gain per $100 spent
 }
 
 export interface UpgradePathWarning {
@@ -88,6 +89,9 @@ export interface UpgradeRecommendation {
   }>
   // Upgrade path warning (sequential bottleneck detection)
   pathWarning?: UpgradePathWarning
+  // Value curve data for diminishing returns visualization
+  candidatesWithValue?: UpgradeCandidate[]
+  sweetSpotIndex?: number
 }
 
 export interface ComboRecommendation {
