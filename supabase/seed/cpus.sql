@@ -1,8 +1,69 @@
 -- CPU Seed Data for Smoothspec
 -- Benchmark scores based on PassMark multi-thread performance
--- Current gen: Intel 14th Gen, AMD Ryzen 7000 series
+-- Current gen: AMD Ryzen 9000 series, Intel 14th Gen
 
 INSERT INTO components (type, brand, model, release_year, benchmark_score, specs) VALUES
+
+-- =============================================================================
+-- LATEST GENERATION (2024-2025)
+-- =============================================================================
+
+-- AMD Ryzen 9000 Series (Zen 5) - 2024-2025
+-- Source: PassMark CPU benchmarks (January 2026)
+-- Architecture: Zen 5 with support for DDR5-5600 and PCIe 5.0
+('cpu', 'AMD', 'Ryzen 9 9950X', 2024, 65857, '{
+  "cores": 16,
+  "threads": 32,
+  "base_clock": 4.3,
+  "boost_clock": 5.7,
+  "tdp": 170,
+  "socket": "AM5",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'AMD', 'Ryzen 9 9900X', 2024, 53863, '{
+  "cores": 12,
+  "threads": 24,
+  "base_clock": 4.4,
+  "boost_clock": 5.6,
+  "tdp": 120,
+  "socket": "AM5",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'AMD', 'Ryzen 7 9700X', 2024, 37127, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.8,
+  "boost_clock": 5.5,
+  "tdp": 65,
+  "socket": "AM5",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'AMD', 'Ryzen 5 9600X', 2024, 29996, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.9,
+  "boost_clock": 5.4,
+  "tdp": 65,
+  "socket": "AM5",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'AMD', 'Ryzen 5 9600', 2025, 29369, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.8,
+  "boost_clock": 5.2,
+  "tdp": 65,
+  "socket": "AM5",
+  "integrated_graphics": false
+}'::jsonb),
+
+-- =============================================================================
+-- RECENT GENERATION (2023-2024)
+-- =============================================================================
 
 -- Intel 14th Gen (Raptor Lake Refresh)
 ('cpu', 'Intel', 'Core i5-14400F', 2024, 24500, '{
