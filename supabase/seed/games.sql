@@ -588,4 +588,216 @@ INSERT INTO games (name, steam_id, cpu_weight, gpu_weight, ram_requirement, reco
   "min_gpu": "GTX 970",
   "rec_gpu": "RTX 3080",
   "notes": "RTS with detailed graphics"
+}'::jsonb),
+
+-- NEW POPULAR GAMES - Top Missing from SteamCharts (January 2026)
+-- These are the top 20 most-played Steam games not currently in the database
+-- Source: https://steamcharts.com/top (January 10, 2026)
+
+-- TOP 10 MISSING GAMES
+
+-- #5 on Steam - GPU-heavy UE5 hero shooter
+-- Sources: GameGPU, PC Optimized Settings, NotebookCheck (Dec 2024-Jan 2026)
+('Marvel Rivals', '2767030', 1.0, 1.3, 16, '{
+  "min_cpu": "Intel Core i5-6600K",
+  "rec_cpu": "Intel Core i7-9700",
+  "min_gpu": "GTX 1060",
+  "rec_gpu": "RTX 3060",
+  "notes": "GPU-heavy Unreal Engine 5 game, Lumen GI most taxing setting (-30% FPS)"
+}'::jsonb),
+
+-- #9 on Steam - Looter shooter with CPU lean for many players/effects
+-- Sources: NotebookCheck, PC Optimized Settings (2024-2026)
+('Warframe', '230410', 1.0, 1.1, 16, '{
+  "min_cpu": "Intel Core i7-860",
+  "rec_cpu": "Intel Core i5-6350HQ",
+  "min_gpu": "GTX 1050",
+  "rec_gpu": "GTX 1050 Ti",
+  "notes": "Well optimized, RTX 3060 shows 70% higher FPS in newer areas"
+}'::jsonb),
+
+-- #15 on Steam - Uses 12 threads efficiently, both CPU and GPU intensive
+-- Sources: GameGPU, DSO Gaming, PC Optimized Settings (Dec 2024-Jan 2026)
+('Path of Exile 2', '2694490', 1.2, 1.2, 16, '{
+  "min_cpu": "Intel Core i5-9400F",
+  "rec_cpu": "Intel Core i7-12700K",
+  "min_gpu": "RTX 2060",
+  "rec_gpu": "RTX 3080",
+  "notes": "Uses up to 12 threads, high CPU utilization, 9GB VRAM at 4K Ultra"
+}'::jsonb),
+
+-- #21 on Steam - Source engine, CPU-bound classic FPS
+-- Sources: NotebookCheck, Steam discussions (2024-2026)
+('Team Fortress 2', '440', 1.3, 0.9, 8, '{
+  "min_cpu": "Intel Core 2 Duo E7500",
+  "rec_cpu": "Intel Core i7-3770",
+  "min_gpu": "GTX 550 Ti",
+  "rec_gpu": "GTX 660",
+  "notes": "Source engine, CPU-bound with 77% CPU scaling, multicore rendering helps"
+}'::jsonb),
+
+-- CPU-HEAVY / MULTIPLAYER GAMES
+
+-- #32 on Steam - CPU-intensive co-op shooter with optimization issues
+-- Sources: GameGPU, NotebookCheck, Steam discussions (2024-2026)
+('HELLDIVERS 2', '553850', 1.2, 1.1, 8, '{
+  "min_cpu": "Intel Core i5-8600K",
+  "rec_cpu": "Intel Core i7-9700K",
+  "min_gpu": "GTX 1050 Ti",
+  "rec_gpu": "RTX 3070",
+  "notes": "Very CPU-intensive, 90% CPU usage, outdated engine"
+}'::jsonb),
+
+-- Very CPU-bound social VR platform
+-- Sources: VRChat Wiki, Community Benchmarks, Steam discussions (2024-2026)
+('VRChat', '438100', 1.4, 0.8, 8, '{
+  "min_cpu": "Intel Core i5-4590",
+  "rec_cpu": "Intel Core i7-8700K",
+  "min_gpu": "GTX 970",
+  "rec_gpu": "GTX 1660 SUPER",
+  "notes": "Mostly single-core bound, CPU performance more important than GPU"
+}'::jsonb),
+
+-- CPU-heavy 128-player battles
+-- Sources: TechSpot, Tom''s Hardware, GameGPU (2021-2026)
+('Battlefield 2042', '1517290', 1.3, 1.2, 16, '{
+  "min_cpu": "Intel Core i5-6600K",
+  "rec_cpu": "Intel Core i7-10700K",
+  "min_gpu": "GTX 1050 Ti",
+  "rec_gpu": "RTX 3060",
+  "notes": "Very CPU demanding, 128-player battles stress CPU, memory latency matters"
+}'::jsonb),
+
+-- Moderate CPU-bound, UE5 shooter
+-- Sources: GameGPU, PC Optimized Settings, NotebookCheck (2024-2026)
+('Delta Force', '2507950', 1.1, 1.2, 16, '{
+  "min_cpu": "Intel Core i3-4150",
+  "rec_cpu": "Intel Core i5-6500",
+  "min_gpu": "GTX 960",
+  "rec_gpu": "GTX 1060",
+  "notes": "Moderately CPU-bound, cannot scale beyond 8 CPU cores"
+}'::jsonb),
+
+-- CPU-bound vehicle combat MMO
+-- Sources: PC Optimized Settings, OpenBenchmarking, HowManyFPS (2024-2026)
+('War Thunder', '236390', 1.2, 0.9, 8, '{
+  "min_cpu": "Intel Core 2 Duo E6600",
+  "rec_cpu": "Intel Core i5-8400",
+  "min_gpu": "GTX 660",
+  "rec_gpu": "GTX 1060",
+  "notes": "Predominantly CPU-bound at 1080p/1440p, not very demanding overall"
+}'::jsonb),
+
+-- CPU-intensive asymmetric horror
+-- Sources: PCGameBenchmark, System Requirements Lab (2024-2026)
+('Dead by Daylight', '381210', 1.2, 0.9, 8, '{
+  "min_cpu": "Intel Pentium G2020",
+  "rec_cpu": "Intel Core i3-4170",
+  "min_gpu": "GTX 760",
+  "rec_gpu": "GTX 1050",
+  "notes": "More CPU intensive than GPU, modest requirements"
+}'::jsonb),
+
+-- Very CPU-heavy zombie survival sim
+-- Sources: PCGameBenchmark, System Requirements Lab, Steam discussions (2024-2026)
+('Project Zomboid', '108600', 1.4, 0.7, 16, '{
+  "min_cpu": "Intel Core 2.77GHz quad-core",
+  "rec_cpu": "Intel Core i5-9600K",
+  "min_gpu": "Radeon HD 5450",
+  "rec_gpu": "Radeon RX 5700 XT",
+  "notes": "CPU load incredibly high, hundreds/thousands of zombies stress CPU"
+}'::jsonb),
+
+-- MODERN AAA / GPU-HEAVY GAMES
+
+-- GPU-bound open world action-adventure
+-- Sources: DSO Gaming, GameGPU, OC3D, NoisyPixel (2024-2026)
+('Monster Hunter Wilds', '2246340', 1.0, 1.3, 32, '{
+  "min_cpu": "Intel Core i5-10600",
+  "rec_cpu": "Intel Core i7-12700K",
+  "min_gpu": "GTX 1660 Ti",
+  "rec_gpu": "RTX 3080",
+  "notes": "Mostly GPU-bound, needs modern 6+ thread CPU, optimizations planned Jan-Feb 2026"
+}'::jsonb),
+
+-- GPU-heavy open world martial arts
+-- Sources: GameGPU, DSO Gaming, GAM3S.GG (2025-2026)
+('Where Winds Meet', '3564740', 1.1, 1.3, 32, '{
+  "min_cpu": "AMD Ryzen 4 3600X",
+  "rec_cpu": "Intel Core i7-10700",
+  "min_gpu": "AMD RX 480",
+  "rec_gpu": "RTX 2070 SUPER",
+  "notes": "Favours NVIDIA hardware, supports DLSS 4/FSR 3.0/XeSS, traversal stutters"
+}'::jsonb),
+
+-- GPU-favored, 60fps capped
+-- Sources: GameGPU, PC Gamer, PC Optimized Settings (2025-2026)
+('ELDEN RING NIGHTREIGN', '2622380', 0.9, 1.2, 16, '{
+  "min_cpu": "Intel Core i5-10600",
+  "rec_cpu": "Intel Core i7-10700K",
+  "min_gpu": "GTX 1060",
+  "rec_gpu": "RTX 3060",
+  "notes": "60fps cap, doesn''t properly utilize high-end CPUs, FromSoftware engine"
+}'::jsonb),
+
+-- Heavy on both CPU and GPU, UE5
+-- Sources: GameGPU, Logical Increments, PCGameBenchmark (2024-2026)
+('ARK: Survival Ascended', '2399830', 1.2, 1.3, 32, '{
+  "min_cpu": "Intel Core i7-6800K",
+  "rec_cpu": "Intel Core i5-10600K",
+  "min_gpu": "GTX 1080",
+  "rec_gpu": "RTX 3080",
+  "notes": "Unreal Engine 5 with Lumen/Nanite, heavy on both CPU and GPU"
+}'::jsonb),
+
+-- GPU-bound survival crafting
+-- Sources: NotebookCheck, PC Optimized Settings, Digital Trends (2025-2026)
+('Enshrouded', '1203620', 1.1, 1.2, 16, '{
+  "min_cpu": "Intel Core i5-6400",
+  "rec_cpu": "Intel Core i7-8700",
+  "min_gpu": "GTX 1060",
+  "rec_gpu": "RTX 2070 SUPER",
+  "notes": "GPU-bound at 1440p/4K, intermittent CPU stuttering, supports DLSS 4/FSR 3.1"
+}'::jsonb),
+
+-- CPU-bottlenecked at high FPS
+-- Sources: GameGPU, NotebookCheck, PC Optimized Settings (2024-2026)
+('Once Human', '2139460', 1.2, 1.1, 16, '{
+  "min_cpu": "Intel Core i5-4460",
+  "rec_cpu": "Intel Core i7-7700",
+  "min_gpu": "GTX 750 Ti",
+  "rec_gpu": "GTX 1060",
+  "notes": "CPU bottlenecked at 1080p, unlimited FPS = 100% CPU usage, supports DLSS 3/FSR 2"
+}'::jsonb),
+
+-- LIGHTWEIGHT / OLDER GAMES
+
+-- Source engine classic, CPU-bound
+-- Sources: GameHelper, TechSpot, Tom''s Hardware (2024-2026)
+('Left 4 Dead 2', '550', 1.3, 0.7, 8, '{
+  "min_cpu": "Intel Pentium 4 3.0GHz",
+  "rec_cpu": "Intel Core i5-4590",
+  "min_gpu": "ATI X800",
+  "rec_gpu": "GTX 660",
+  "notes": "Source engine, single-core bound, multicore rendering improves FPS by 47%"
+}'::jsonb),
+
+-- Very CPU-bound 2D platformer
+-- Sources: PCGameBenchmark, Geometry Dash Forum (2024-2026)
+('Geometry Dash', '322170', 1.2, 0.6, 8, '{
+  "min_cpu": "Intel Pentium 4 1500MHz",
+  "rec_cpu": "Intel Celeron G1101",
+  "min_gpu": "GeForce 6200 LE",
+  "rec_gpu": "GTX 280",
+  "notes": "CPU intensive game, GT730 could give 144fps if CPU is good enough"
+}'::jsonb),
+
+-- Balanced indie co-op horror
+-- Sources: PCGameBenchmark, VGTimes, System Requirements Lab (2024)
+('Content Warning', '2881650', 1.0, 1.0, 16, '{
+  "min_cpu": "Intel Core i5-3210M",
+  "rec_cpu": "Intel Core i5-2400",
+  "min_gpu": "GTX 1050 Ti",
+  "rec_gpu": "GTX 1060",
+  "notes": "Mid-range 2016 hardware sufficient, fairly accessible"
 }'::jsonb);

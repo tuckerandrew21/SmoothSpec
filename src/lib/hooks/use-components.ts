@@ -45,6 +45,7 @@ export interface Game {
   gpu_weight: number
   ram_requirement: number
   recommended_specs?: Record<string, string>
+  popularity_rank?: number // 1 = most popular, 999 = not ranked
 }
 
 export function useComponents(type: "cpu" | "gpu" | "ram" | "storage" | "psu") {
@@ -98,7 +99,8 @@ export function useGames() {
       const { data, error: fetchError } = await supabase
         .from("games")
         .select("*")
-        .order("name")
+        .order("popularity_rank", { ascending: true }) // Most popular first
+        .order("name", { ascending: true }) // Alphabetical tiebreaker
 
       if (fetchError) {
         setError(fetchError.message)
