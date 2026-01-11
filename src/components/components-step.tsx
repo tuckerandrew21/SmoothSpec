@@ -5,12 +5,17 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ErrorAlert } from "@/components/ui/error-alert"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Check } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 import {
   useComponentBrands,
   useComponentFamilies,
   useComponentsByFamily,
   FAMILY_EXAMPLES,
 } from "@/lib/hooks/use-components"
+import { BUILD_PRESETS, findComponentByName, type BuildPreset } from "@/lib/presets"
 import type { BuildData } from "@/types/build"
 import type { Resolution } from "@/lib/resolution-modifier"
 
@@ -20,6 +25,10 @@ interface ComponentsStepProps {
 }
 
 export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepProps) {
+  // Preset state
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
+  const [applyingPreset, setApplyingPreset] = useState(false)
+
   // CPU cascading state
   const [cpuBrand, setCpuBrand] = useState<string>("")
   const [cpuFamily, setCpuFamily] = useState<string>("")
@@ -31,6 +40,43 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
   // RAM state
   const [ramType, setRamType] = useState<string>("")
   const [ramSize, setRamSize] = useState<string>("")
+
+  // Apply preset function
+  const applyPreset = async (preset: BuildPreset) => {
+    setApplyingPreset(true)
+    try {
+      // Lookup component IDs
+      const cpuId = await findComponentByName(preset.components.cpu, 'cpu', supabase)
+      const gpuId = await findComponentByName(preset.components.gpu, 'gpu', supabase)
+
+      if (cpuId && gpuId) {
+        updateBuildData({
+          cpu: cpuId,
+          gpu: gpuId,
+          ram: preset.components.ram,
+          storage: preset.components.storage || buildData.storage,
+          psu: preset.components.psu || buildData.psu,
+          resolution: preset.targetResolution,
+        })
+        setSelectedPreset(preset.name)
+
+        // Reset cascading dropdowns since we're setting IDs directly
+        setCpuBrand("")
+        setCpuFamily("")
+        setGpuBrand("")
+        setGpuFamily("")
+
+        // Set RAM state
+        const [type, size] = preset.components.ram.split('-')
+        setRamType(type)
+        setRamSize(size)
+      }
+    } catch (error) {
+      console.error('Failed to apply preset:', error)
+    } finally {
+      setApplyingPreset(false)
+    }
+  }
 
   // Fetch data for cascading dropdowns
   const { brands: cpuBrands, loading: cpuBrandsLoading, error: cpuBrandsError } = useComponentBrands("cpu")
@@ -75,6 +121,36 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-card-foreground">Tell us about your PC</h2>
         <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">Enter your current hardware components</p>
       </div>
+
+      {/* Quick Start Presets */}
+      <Card className="bg-blue-500/5 border-blue-500/20 p-4">
+        <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+          🚀 Quick Start: Choose a preset build
+        </h3>
+        <div className="grid gap-2">
+          {BUILD_PRESETS.map((preset) => (
+            <Button
+              key={preset.name}
+              variant={selectedPreset === preset.name ? 'default' : 'outline'}
+              onClick={() => applyPreset(preset)}
+              disabled={applyingPreset}
+              className="justify-start text-left h-auto py-3"
+            >
+              <div className="flex flex-col items-start w-full">
+                <div className="font-medium">{preset.name}</div>
+                <div className="text-xs opacity-70">{preset.description}</div>
+                <div className="text-xs opacity-50 mt-1">~${preset.estimatedCost}</div>
+              </div>
+            </Button>
+          ))}
+        </div>
+        {selectedPreset && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-green-600">
+            <Check className="h-3 w-3" />
+            Preset applied. Modify components below if needed.
+          </div>
+        )}
+      </Card>
 
       {/* Core Components Section */}
       <div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-5">
