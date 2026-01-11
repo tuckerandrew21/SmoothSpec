@@ -53,23 +53,33 @@ describe("CPU Seed Data", () => {
     }
   });
 
-  it("should have all CPUs with benchmark scores in valid range (5,000-60,000)", () => {
+  it("should have all CPUs with benchmark scores in valid range (2,000-60,000)", () => {
     for (const cpu of cpus) {
-      expect(cpu.benchmark_score).toBeGreaterThanOrEqual(5000);
+      expect(cpu.benchmark_score).toBeGreaterThanOrEqual(2000); // Lower for legacy FX series
       expect(cpu.benchmark_score).toBeLessThanOrEqual(60000);
     }
   });
 
-  it("should have all CPUs with release_year between 2015-2025", () => {
+  it("should have all CPUs with release_year between 2010-2026", () => {
     for (const cpu of cpus) {
-      expect(cpu.release_year).toBeGreaterThanOrEqual(2015);
-      expect(cpu.release_year).toBeLessThanOrEqual(2025);
+      expect(cpu.release_year).toBeGreaterThanOrEqual(2010); // Extended for legacy hardware
+      expect(cpu.release_year).toBeLessThanOrEqual(2026); // Extended for latest releases
     }
   });
 
   it("should have only Intel or AMD brands", () => {
     for (const cpu of cpus) {
       expect(["Intel", "AMD"]).toContain(cpu.brand);
+    }
+  });
+
+  it("should not include laptop/mobile CPUs", () => {
+    const laptopSuffixes = ["M", "H", "HX", "HK", "U", "Y", "Mobile"];
+    for (const cpu of cpus) {
+      const hasLaptopSuffix = laptopSuffixes.some(suffix =>
+        cpu.model.includes(suffix)
+      );
+      expect(hasLaptopSuffix, `${cpu.brand} ${cpu.model} appears to be a laptop CPU`).toBe(false);
     }
   });
 });
@@ -95,23 +105,33 @@ describe("GPU Seed Data", () => {
     }
   });
 
-  it("should have all GPUs with benchmark scores in valid range (3,000-45,000)", () => {
+  it("should have all GPUs with benchmark scores in valid range (1,500-45,000)", () => {
     for (const gpu of gpus) {
-      expect(gpu.benchmark_score).toBeGreaterThanOrEqual(3000);
-      expect(gpu.benchmark_score).toBeLessThanOrEqual(45000);
+      expect(gpu.benchmark_score).toBeGreaterThanOrEqual(1500); // Lower for old GPUs
+      expect(gpu.benchmark_score).toBeLessThanOrEqual(45000); // Higher for RTX 5090
     }
   });
 
-  it("should have all GPUs with release_year between 2015-2025", () => {
+  it("should have all GPUs with release_year between 2010-2026", () => {
     for (const gpu of gpus) {
-      expect(gpu.release_year).toBeGreaterThanOrEqual(2015);
-      expect(gpu.release_year).toBeLessThanOrEqual(2025);
+      expect(gpu.release_year).toBeGreaterThanOrEqual(2010); // Extended for legacy hardware
+      expect(gpu.release_year).toBeLessThanOrEqual(2026); // Extended for latest releases
     }
   });
 
   it("should have only NVIDIA, AMD, or Intel brands", () => {
     for (const gpu of gpus) {
       expect(["NVIDIA", "AMD", "Intel"]).toContain(gpu.brand);
+    }
+  });
+
+  it("should not include laptop/mobile GPUs", () => {
+    const laptopSuffixes = ["M", "Mobile", "Laptop GPU", "Max-Q"];
+    for (const gpu of gpus) {
+      const hasLaptopSuffix = laptopSuffixes.some(suffix =>
+        gpu.model.includes(suffix)
+      );
+      expect(hasLaptopSuffix, `${gpu.brand} ${gpu.model} appears to be a laptop GPU`).toBe(false);
     }
   });
 });
@@ -160,12 +180,12 @@ describe("Game Seed Data", () => {
 });
 
 describe("Data Coverage", () => {
-  it("should have at least 30 CPUs", () => {
-    expect(cpus.length).toBeGreaterThanOrEqual(30);
+  it("should have at least 100 CPUs", () => {
+    expect(cpus.length).toBeGreaterThanOrEqual(100); // Increased for 2010-2026 coverage
   });
 
-  it("should have at least 40 GPUs", () => {
-    expect(gpus.length).toBeGreaterThanOrEqual(40);
+  it("should have at least 150 GPUs", () => {
+    expect(gpus.length).toBeGreaterThanOrEqual(150); // Increased for 2010-2026 coverage
   });
 
   it("should have at least 50 games", () => {

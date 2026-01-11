@@ -18,23 +18,59 @@ export interface Component {
  * Helper text examples for each family
  */
 export const FAMILY_EXAMPLES: Record<string, string> = {
-  // Intel CPUs
+  // Intel CPUs (newest first)
   "14th Gen": "e.g. i7-14700K",
   "13th Gen": "e.g. i5-13600K",
   "12th Gen": "e.g. i5-12400F",
-  "10th Gen": "e.g. i3-10100F",
+  "11th Gen": "e.g. i7-11700K",
+  "10th Gen": "e.g. i5-10400F",
+  "9th Gen": "e.g. i5-9400F",
+  "8th Gen": "e.g. i5-8400",
+  "7th Gen": "e.g. i5-7500",
+  "6th Gen": "e.g. i5-6500",
+  "5th Gen": "e.g. i5-5675C",
+  "4th Gen": "e.g. i5-4690K",
+
   // AMD CPUs
   "Ryzen 9000": "e.g. Ryzen 7 9700X",
   "Ryzen 7000": "e.g. Ryzen 7 7800X3D",
   "Ryzen 5000": "e.g. Ryzen 5 5600X",
+  "Ryzen 4000": "e.g. Ryzen 5 4600G",
   "Ryzen 3000": "e.g. Ryzen 5 3600",
-  // NVIDIA GPUs
+  "Ryzen 2000": "e.g. Ryzen 5 2600",
+  "Ryzen 1000": "e.g. Ryzen 5 1600",
+  "FX Series": "e.g. FX-8350",
+  "A-Series": "e.g. A10-7850K",
+
+  // NVIDIA GPUs (newest first)
+  "RTX 50 Series": "e.g. RTX 5070",
   "RTX 40 Series": "e.g. RTX 4070",
   "RTX 30 Series": "e.g. RTX 3070",
+  "RTX 20 Series": "e.g. RTX 2070",
   "GTX 16 Series": "e.g. GTX 1660 Super",
+  "GTX 10 Series": "e.g. GTX 1060",
+  "GTX 900 Series": "e.g. GTX 970",
+  "GTX 700 Series": "e.g. GTX 760",
+  "GTX 600 Series": "e.g. GTX 660",
+  "GTX 500 Series": "e.g. GTX 560 Ti",
+  "GTX 400 Series": "e.g. GTX 460",
+  "Titan Series": "e.g. Titan X",
+
   // AMD GPUs
   "RX 7000 Series": "e.g. RX 7800 XT",
   "RX 6000 Series": "e.g. RX 6700 XT",
+  "RX 5000 Series": "e.g. RX 5700 XT",
+  "RX Vega": "e.g. RX Vega 64",
+  "RX 500 Series": "e.g. RX 580",
+  "RX 400 Series": "e.g. RX 480",
+  "R9/R7 300 Series": "e.g. R9 390",
+  "R9/R7 200 Series": "e.g. R9 290",
+  "HD 7000 Series": "e.g. HD 7970",
+  "HD 6000 Series": "e.g. HD 6950",
+  "HD 5000 Series": "e.g. HD 5870",
+
+  // Intel GPUs
+  "Arc": "e.g. Arc A770",
 }
 
 export interface Game {

@@ -38,26 +38,48 @@ interface Component {
  */
 function getCpuFamily(brand: string, model: string): string {
   if (brand === "Intel") {
-    // Intel: Core i*-14*** = 14th Gen, Core i*-13*** = 13th Gen, etc.
-    const match = model.match(/Core i[3579]-(\d{2})\d{3}/)
+    // Core Ultra (latest naming scheme)
+    if (model.includes("Core Ultra")) {
+      return "Core Ultra"
+    }
+
+    // Standard Core i* pattern: i*-14*** = 14th Gen, i*-5*** = 5th Gen, etc.
+    // This handles 5th-14th Gen with 2-digit generation numbers
+    const match = model.match(/Core i[3579]-(\d{1,2})\d{3}/)
     if (match) {
       const gen = parseInt(match[1], 10)
       return `${gen}th Gen`
     }
-    // Older Intel (10th gen)
-    if (model.includes("10100") || model.includes("10400") || model.includes("10600") || model.includes("10700") || model.includes("10900")) {
+
+    // Special case for 10th gen (already exists, keeping for compatibility)
+    if (model.includes("10100") || model.includes("10400") || model.includes("10600") ||
+        model.includes("10700") || model.includes("10900")) {
       return "10th Gen"
     }
   } else if (brand === "AMD") {
-    // AMD Ryzen: Ryzen * 7*** = Ryzen 7000, Ryzen * 5*** = Ryzen 5000, etc.
+    // AMD Ryzen: Ryzen * 9*** = Ryzen 9000, Ryzen * 1*** = Ryzen 1000, etc.
     const match = model.match(/Ryzen [3579] (\d)\d{3}/)
     if (match) {
       const series = match[1]
       return `Ryzen ${series}000`
     }
-    // Ryzen 3 3200G special case
-    if (model.includes("3200G") || model.includes("3400G")) {
-      return "Ryzen 3000"
+
+    // APUs with G suffix (desktop versions)
+    if (model.match(/Ryzen [3579] \d{4}G/)) {
+      const aMatch = model.match(/Ryzen [3579] (\d)\d{3}G/)
+      if (aMatch) {
+        return `Ryzen ${aMatch[1]}000`
+      }
+    }
+
+    // FX series
+    if (model.startsWith("FX-")) {
+      return "FX Series"
+    }
+
+    // A-Series APUs
+    if (model.startsWith("A10-") || model.startsWith("A8-") || model.startsWith("A6-")) {
+      return "A-Series"
     }
   }
   return "Other"
@@ -68,26 +90,103 @@ function getCpuFamily(brand: string, model: string): string {
  */
 function getGpuFamily(brand: string, model: string): string {
   if (brand === "NVIDIA") {
-    // RTX 40 series
+    // RTX 50 series (Blackwell - 2025-2026)
+    if (model.match(/RTX 50[5-9]0/)) {
+      return "RTX 50 Series"
+    }
+    // RTX 40 series (Ada Lovelace)
     if (model.match(/RTX 40[5-9]0/)) {
       return "RTX 40 Series"
     }
-    // RTX 30 series
+    // RTX 30 series (Ampere)
     if (model.match(/RTX 30[5-9]0/)) {
       return "RTX 30 Series"
     }
-    // GTX 16 series
-    if (model.match(/GTX 16[5-8]0/)) {
+    // RTX 20 series (Turing)
+    if (model.match(/RTX 20[6-8]0/)) {
+      return "RTX 20 Series"
+    }
+    // GTX 16 series (Turing)
+    if (model.match(/GTX 16[3-6]0/)) {
       return "GTX 16 Series"
     }
+    // GTX 10 series (Pascal)
+    if (model.match(/GTX 10[0-8]0/)) {
+      return "GTX 10 Series"
+    }
+    // GTX 900 series (Maxwell)
+    if (model.match(/GTX 9[5-8]0/)) {
+      return "GTX 900 Series"
+    }
+    // GTX 700 series (Kepler)
+    if (model.match(/GTX 7[5-9]0/)) {
+      return "GTX 700 Series"
+    }
+    // GTX 600 series (Kepler)
+    if (model.match(/GTX 6[5-9]0/)) {
+      return "GTX 600 Series"
+    }
+    // GTX 500 series (Fermi)
+    if (model.match(/GTX 5[5-9]0/)) {
+      return "GTX 500 Series"
+    }
+    // GTX 400 series (Fermi)
+    if (model.match(/GTX 4[6-8]0/)) {
+      return "GTX 400 Series"
+    }
+    // Titans (various eras)
+    if (model.includes("Titan")) {
+      return "Titan Series"
+    }
   } else if (brand === "AMD") {
-    // RX 7000 series
+    // RX 7000 series (RDNA 3)
     if (model.match(/RX 7[6-9]00/)) {
       return "RX 7000 Series"
     }
-    // RX 6000 series
+    // RX 6000 series (RDNA 2)
     if (model.match(/RX 6[4-9]00/)) {
       return "RX 6000 Series"
+    }
+    // RX 5000 series (RDNA)
+    if (model.match(/RX 5[4-7]00/)) {
+      return "RX 5000 Series"
+    }
+    // RX Vega (GCN 5)
+    if (model.includes("Vega") || model.includes("Radeon VII") || model.includes("Frontier Edition")) {
+      return "RX Vega"
+    }
+    // RX 500 series (Polaris refresh)
+    if (model.match(/RX 5[5-9]0/)) {
+      return "RX 500 Series"
+    }
+    // RX 400 series (Polaris)
+    if (model.match(/RX 4[6-8]0/)) {
+      return "RX 400 Series"
+    }
+    // R9/R7 300 series (GCN 1-3)
+    if (model.match(/R[79] [3][0-9]0/)) {
+      return "R9/R7 300 Series"
+    }
+    // R9/R7 200 series (GCN 1-2)
+    if (model.match(/R[79] 2[0-9]0/)) {
+      return "R9/R7 200 Series"
+    }
+    // HD 7000 series (GCN 1)
+    if (model.match(/HD 7[0-9]{3}/)) {
+      return "HD 7000 Series"
+    }
+    // HD 6000 series (VLIW4)
+    if (model.match(/HD 6[0-9]{3}/)) {
+      return "HD 6000 Series"
+    }
+    // HD 5000 series (VLIW5)
+    if (model.match(/HD 5[0-9]{3}/)) {
+      return "HD 5000 Series"
+    }
+  } else if (brand === "Intel") {
+    // Intel Arc (Xe HPG)
+    if (model.includes("Arc")) {
+      return "Arc"
     }
   }
   return "Other"
