@@ -12,7 +12,7 @@ interface GameAnalysisCardProps {
 }
 
 export function GameAnalysisCard({ analysis }: GameAnalysisCardProps) {
-  const { game, bottleneck, ramSufficient, ramDeficit, recommendation } = analysis
+  const { game, bottleneck, ramSufficient, ramDeficit, recommendation, estimatedFpsLoss } = analysis
   const systemDemand = getSystemDemand(game.cpu_weight, game.gpu_weight)
 
   const getDemandColor = () => {
@@ -63,6 +63,21 @@ export function GameAnalysisCard({ analysis }: GameAnalysisCardProps) {
           component={bottleneck.component}
           percentage={bottleneck.percentage}
         />
+        {estimatedFpsLoss && estimatedFpsLoss.total > 0 && (
+          <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-red-500">Performance Left on Table</p>
+                <p className="text-lg font-bold text-red-600 mt-0.5">~{estimatedFpsLoss.total} FPS</p>
+              </div>
+              {bottleneck.component !== 'balanced' && (
+                <div className="text-xs text-muted-foreground">
+                  {bottleneck.component === 'cpu' ? 'CPU-limited' : 'GPU-limited'}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         <p className="text-sm text-muted-foreground">{recommendation}</p>
       </CardContent>
     </Card>

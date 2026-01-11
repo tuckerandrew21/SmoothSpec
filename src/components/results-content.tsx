@@ -382,6 +382,33 @@ Analyzed with SmoothSpec`
           </div>
         </Card>
 
+        {/* Performance Left on Table */}
+        {analysis && analysis.perGameAnalysis.length > 0 && (() => {
+          const gamesWithLoss = analysis.perGameAnalysis.filter(a => a.estimatedFpsLoss && a.estimatedFpsLoss.total > 0)
+          if (gamesWithLoss.length === 0) return null
+
+          const avgFpsLoss = Math.round(
+            gamesWithLoss.reduce((sum, a) => sum + (a.estimatedFpsLoss?.total || 0), 0) / gamesWithLoss.length
+          )
+
+          return (
+            <Card className="mt-4 sm:mt-6 border-red-500/30 bg-red-500/5 p-4 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Performance Left on Table</h3>
+                  <div className="text-3xl sm:text-4xl font-bold text-red-500 mt-1">
+                    ~{avgFpsLoss} FPS
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    Average across {gamesWithLoss.length} game{gamesWithLoss.length > 1 ? 's' : ''} with bottlenecks
+                  </p>
+                </div>
+                <TrendingUp className="h-8 w-8 sm:h-12 sm:w-12 text-red-500 opacity-50" />
+              </div>
+            </Card>
+          )
+        })()}
+
         {/* Data Quality Warning */}
         {analysis?.dataQuality && analysis.dataQuality !== "complete" && (
           <Card className="mt-4 sm:mt-6 border-yellow-500/50 bg-yellow-500/5 p-3 sm:p-4">

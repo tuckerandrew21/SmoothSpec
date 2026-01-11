@@ -33,6 +33,11 @@ export interface GameAnalysis {
   ramSufficient: boolean
   ramDeficit: number // 0 if sufficient, else GB needed
   recommendation: string
+  estimatedFpsLoss?: {
+    cpu: number
+    gpu: number
+    total: number
+  }
 }
 
 export interface ComponentAge {

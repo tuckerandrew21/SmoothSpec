@@ -14,6 +14,7 @@ import {
   PSU_HEADROOM,
 } from '../constants'
 import { adjustWeightsForResolution, type Resolution } from '../resolution-modifier'
+import { estimateFpsLoss } from './fps-estimator'
 import type { BuildData } from '@/types/build'
 import type { Component, Game, GameAnalysis, ComponentAge, StorageAnalysis, PsuAnalysis } from '@/types/analysis'
 
@@ -64,12 +65,16 @@ export function analyzeGamePerformance(
     recommendation += ` Also, ${game.name} recommends ${game.ram_requirement}GB RAM (you have ${userRam}GB).`
   }
 
+  // Calculate estimated FPS loss from bottleneck
+  const estimatedFpsLoss = estimateFpsLoss(game, bottleneck, cpuScore, gpuScore, resolution)
+
   return {
     game,
     bottleneck,
     ramSufficient,
     ramDeficit,
     recommendation,
+    estimatedFpsLoss,
   }
 }
 
