@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { TrendingUp, ExternalLink, Loader2, AlertTriangle, PiggyBank } from "lucide-react"
+import { TrendingUp, ExternalLink, Loader2, AlertTriangle, PiggyBank, ChevronDown } from "lucide-react"
 import type { UpgradeRecommendation, UpgradeCandidate, Component } from "@/types/analysis"
 import { fetchComponentPrices, getRetailerLinksForComponent, type RetailerLinksResult } from "@/app/actions/prices"
 import { trackAffiliateClicked } from "@/lib/analytics"
@@ -38,6 +38,7 @@ interface UpgradeRecommendationCardProps {
   recommendation: UpgradeRecommendation
   index: number
   budget?: number
+  isBestValue?: boolean
 }
 
 // Budget tolerance - only show "slightly over" if within this margin
@@ -62,9 +63,11 @@ export function UpgradeRecommendationCard({
   recommendation,
   index,
   budget,
+  isBestValue = false,
 }: UpgradeRecommendationCardProps) {
   const [candidatePrices, setCandidatePrices] = useState<CandidatePriceData[]>([])
   const [loadingPrices, setLoadingPrices] = useState(true)
+  const [showGameBreakdown, setShowGameBreakdown] = useState(false)
 
   const componentType = recommendation.componentType as "cpu" | "gpu" | "ram" | "storage" | "psu"
 
@@ -244,6 +247,17 @@ export function UpgradeRecommendationCard({
     }
   }
 
+  const getImpactColor = (level: 'high' | 'medium' | 'low') => {
+    switch (level) {
+      case 'high':
+        return 'text-green-500'
+      case 'medium':
+        return 'text-yellow-500'
+      case 'low':
+        return 'text-muted-foreground'
+    }
+  }
+
   const getComponentIcon = () => {
     switch (recommendation.componentType) {
       case "cpu":
@@ -269,6 +283,15 @@ export function UpgradeRecommendationCard({
   const retailerLinks = selectedCandidate?.priceData?.links ?? []
   const priceUpdatedAt = selectedCandidate?.priceData?.priceUpdatedAt
 
+  // Calculate value score (performance gain per dollar)
+  const valueScore = useMemo(() => {
+    if (!displayPrice || displayPrice === 0 || !displayPerformanceGain) {
+      return null
+    }
+    // Return percentage gain per $100 spent for readability
+    return (displayPerformanceGain / displayPrice) * 100
+  }, [displayPrice, displayPerformanceGain])
+
   return (
     <Card className="border-border bg-card p-4 sm:p-6">
       <div className="space-y-4">
@@ -284,6 +307,11 @@ export function UpgradeRecommendationCard({
               <Badge className={`${getPriorityColor(recommendation.priorityLabel)} text-xs`}>
                 {recommendation.priorityLabel} Priority
               </Badge>
+              {isBestValue && (
+                <Badge className="bg-green-500 text-white text-xs">
+                  Best Value
+                </Badge>
+              )}
             </div>
             <div className="mt-3 space-y-1 text-xs sm:text-sm">
               <p className="text-muted-foreground truncate">
@@ -347,6 +375,11 @@ export function UpgradeRecommendationCard({
                       Updated {formatTimeAgo(priceUpdatedAt)}
                     </span>
                   )}
+                  {valueScore && (
+                    <span className="block mt-1">
+                      Value: <span className="font-medium">{valueScore.toFixed(1)}</span> points per $100
+                    </span>
+                  )}
                 </div>
               </>
             ) : (
@@ -388,6 +421,70 @@ export function UpgradeRecommendationCard({
             <span className="text-muted-foreground">
               {recommendation.affectedGames.join(", ")}
             </span>
+          </div>
+        )}
+
+        {/* Per-Game Breakdown */}
+        {recommendation.perGameImpact && recommendation.perGameImpact.length > 0 && (
+          <div className="border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={() => setShowGameBreakdown(!showGameBreakdown)}
+              className="flex items-center gap-2 text-xs sm:text-sm font-medium text-card-foreground hover:text-primary transition-colors"
+            >
+              <ChevronDown className={`h-4 w-4 transition-transform ${showGameBreakdown ? 'rotate-180' : ''}`} />
+              See per-game impact
+            </button>
+
+            {showGameBreakdown && (
+              <div className="mt-3 space-y-2">
+                {recommendation.perGameImpact.map((game) => (
+                  <div key={game.gameName} className="flex items-center justify-between text-xs sm:text-sm">
+                    <span className="text-muted-foreground">{game.gameName}</span>
+                    <span className={`font-medium ${getImpactColor(game.impactLevel)}`}>
+                      +{game.estimatedImprovement}% performance
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Upgrade Path Warning */}
+        {recommendation.pathWarning && recommendation.pathWarning.willCreateBottleneck && (
+          <div className="border-t border-border pt-4">
+            <Card className="border-yellow-500/50 bg-yellow-500/5 p-3 sm:p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm sm:text-base font-semibold text-yellow-600 mb-1">
+                    Upgrade Path Warning
+                  </h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2">
+                    This upgrade will create a {recommendation.pathWarning.newBottleneckComponent.toUpperCase()} bottleneck{' '}
+                    in {recommendation.pathWarning.timeframe.replace('-', ' ')} for {recommendation.pathWarning.newBottleneckSeverity}% of your games.
+                  </p>
+                  <div className="mt-3 space-y-1 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Next upgrade cost:</span>
+                      <span className="font-medium text-yellow-600">
+                        ${recommendation.pathWarning.estimatedNextUpgradeCost}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-semibold">Total cost:</span>
+                      <span className="font-bold text-yellow-600">
+                        ${recommendation.pathWarning.totalUpgradeCost}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3 italic">
+                    {recommendation.pathWarning.recommendation}
+                  </p>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
 

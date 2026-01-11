@@ -13,6 +13,7 @@ import {
   analyzePsu,
 } from "@/lib/analysis/engine"
 import { generateUpgradeRecommendations } from "@/lib/analysis/recommendations"
+import { generateComboRecommendations } from "@/lib/analysis/budget-optimizer"
 import { assessDataQuality, type PartialFailure } from "@/lib/errors"
 import type { BuildData } from "@/types/build"
 import type { Component, Game, BuildAnalysisResult } from "@/types/analysis"
@@ -167,6 +168,18 @@ export function useBuildAnalysis(buildData: BuildData | null) {
             componentAges,
           })
 
+          // Generate combo recommendations (CPU+GPU upgrades within budget)
+          let comboRecommendations = undefined
+          if (cpu && gpu && data.budget > 0) {
+            comboRecommendations = await generateComboRecommendations({
+              currentCpu: cpu,
+              currentGpu: gpu,
+              perGameAnalysis,
+              budget: data.budget,
+              supabase,
+            })
+          }
+
           // Compile warnings for this resolution
           const resolutionWarnings = [...analysisWarnings]
           resolutionWarnings.push(...recommendationsResult.warnings)
@@ -211,6 +224,7 @@ export function useBuildAnalysis(buildData: BuildData | null) {
             storageAnalysis,
             psuAnalysis,
             recommendations: recommendationsResult.data,
+            comboRecommendations,
             warnings: resolutionWarnings,
             dataQuality: assessDataQuality(resolutionFailures),
             partialFailures: resolutionFailures,

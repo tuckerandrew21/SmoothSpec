@@ -4,10 +4,10 @@
  */
 
 import { supabase } from '../supabase'
-import { calculateUpgradePriority } from '../benchmarks'
+import { calculateUpgradePriority, calculateBottleneck } from '../benchmarks'
 import { BOTTLENECK_THRESHOLD, PRIORITY_THRESHOLDS, RAM_UPGRADE_COSTS, COMPONENT_LIFESPANS } from '../constants'
 import type { OperationResult, PartialFailure } from '../errors'
-import type { Component, GameAnalysis, ComponentAge, UpgradeRecommendation } from '@/types/analysis'
+import type { Component, GameAnalysis, ComponentAge, UpgradeRecommendation, UpgradePathWarning } from '@/types/analysis'
 
 /**
  * Check if a component is past its expected gaming lifespan
@@ -165,6 +165,60 @@ export function generateRecommendationReason(
 }
 
 /**
+ * Calculate per-game performance impact for a component upgrade
+ * Returns all games sorted by impact (highest first)
+ */
+function calculatePerGameImpact(
+  componentType: 'cpu' | 'gpu' | 'ram',
+  performanceGain: number,
+  perGameAnalysis: GameAnalysis[]
+): Array<{gameName: string, estimatedImprovement: number, impactLevel: 'high'|'medium'|'low'}> {
+  const impacts = perGameAnalysis.map(analysis => {
+    const game = analysis.game
+    let relevance = 1.0
+
+    // Component relevance based on game weights and current bottleneck
+    if (componentType === 'gpu') {
+      // GPU upgrade helps GPU-bound games most
+      relevance = game.gpu_weight
+      if (analysis.bottleneck.component === 'gpu') {
+        relevance *= (analysis.bottleneck.percentage / 100)
+      } else {
+        relevance *= 0.2 // Still some benefit even if not bottleneck
+      }
+    } else if (componentType === 'cpu') {
+      // CPU upgrade helps CPU-bound games most
+      relevance = game.cpu_weight
+      if (analysis.bottleneck.component === 'cpu') {
+        relevance *= (analysis.bottleneck.percentage / 100)
+      } else {
+        relevance *= 0.2
+      }
+    } else if (componentType === 'ram') {
+      // RAM upgrade helps RAM-starved games
+      relevance = analysis.ramSufficient ? 0.1 : 1.0
+    }
+
+    const estimatedImprovement = Math.round(performanceGain * relevance)
+
+    // Determine impact level
+    let impactLevel: 'high' | 'medium' | 'low'
+    if (estimatedImprovement >= 15) impactLevel = 'high'
+    else if (estimatedImprovement >= 5) impactLevel = 'medium'
+    else impactLevel = 'low'
+
+    return {
+      gameName: game.name,
+      estimatedImprovement,
+      impactLevel
+    }
+  })
+
+  // Sort by improvement descending
+  return impacts.sort((a, b) => b.estimatedImprovement - a.estimatedImprovement)
+}
+
+/**
  * Generate RAM upgrade recommendation
  */
 export function generateRamRecommendation(
@@ -209,6 +263,11 @@ export function generateRamRecommendation(
     reason: `${gameNames.join(', ')} recommend more RAM. Upgrading to ${recommendedRam}GB will ensure smooth performance.`,
     affectedGames: gameNames,
     prices: [],
+    perGameImpact: gameNames.map(name => ({
+      gameName: name,
+      estimatedImprovement: 10, // RAM gives ~10% improvement when insufficient
+      impactLevel: 'medium' as const
+    }))
   }
 }
 
@@ -259,6 +318,132 @@ function getPriorityLabel(score: number): 'High' | 'Medium' | 'Low' {
   if (score >= PRIORITY_THRESHOLDS.high) return 'High'
   if (score >= PRIORITY_THRESHOLDS.medium) return 'Medium'
   return 'Low'
+}
+
+/**
+ * Detect if single-component upgrade creates new severe bottleneck
+ * Warning if after upgrade, opposite component becomes bottleneck in many games
+ */
+async function detectSequentialBottleneck(
+  recommendation: UpgradeRecommendation,
+  currentCpu: Component,
+  currentGpu: Component,
+  perGameAnalysis: GameAnalysis[]
+): Promise<UpgradePathWarning | null> {
+  // Only check for CPU and GPU upgrades
+  if (recommendation.componentType !== 'cpu' && recommendation.componentType !== 'gpu') {
+    return null
+  }
+
+  // Simulate new component scores after upgrade
+  const newCpuScore = recommendation.componentType === 'cpu'
+    ? recommendation.recommendedComponent.benchmark_score
+    : currentCpu.benchmark_score
+
+  const newGpuScore = recommendation.componentType === 'gpu'
+    ? recommendation.recommendedComponent.benchmark_score
+    : currentGpu.benchmark_score
+
+  // Calculate new bottlenecks per game
+  let severeBottleneckCount = 0
+  let cpuBottleneckCount = 0
+  let gpuBottleneckCount = 0
+  const affectedGames: string[] = []
+
+  for (const analysis of perGameAnalysis) {
+    const newBottleneck = calculateBottleneck(
+      newCpuScore,
+      newGpuScore,
+      analysis.game.cpu_weight,
+      analysis.game.gpu_weight
+    )
+
+    // Check if new bottleneck is severe (>30%)
+    if (newBottleneck.percentage > 30 && newBottleneck.component !== 'balanced') {
+      severeBottleneckCount++
+      affectedGames.push(analysis.game.name)
+
+      if (newBottleneck.component === 'cpu') cpuBottleneckCount++
+      if (newBottleneck.component === 'gpu') gpuBottleneckCount++
+    }
+  }
+
+  const gamesCount = perGameAnalysis.length
+  const severeBottleneckPercentage = gamesCount > 0 ? (severeBottleneckCount / gamesCount) * 100 : 0
+
+  // Determine if warning is needed
+  let timeframe: '6-months' | '1-year' | null = null
+  if (severeBottleneckPercentage >= 50) {
+    timeframe = '6-months'
+  } else if (severeBottleneckPercentage >= 30) {
+    timeframe = '1-year'
+  }
+
+  if (!timeframe) {
+    return null // No warning needed
+  }
+
+  // Determine which component will become the bottleneck
+  const newBottleneckComponent = cpuBottleneckCount > gpuBottleneckCount ? 'cpu' : 'gpu'
+
+  // Query for next upgrade tier (20-30% higher benchmark score)
+  const oppositeComponent = recommendation.componentType === 'cpu' ? currentGpu : currentCpu
+  const targetScore = oppositeComponent.benchmark_score * 1.25 // 25% improvement
+
+  const { data: nextTierComponents } = await supabase
+    .from('components')
+    .select('*')
+    .eq('type', newBottleneckComponent)
+    .gte('benchmark_score', targetScore)
+    .order('benchmark_score', { ascending: true })
+    .limit(1)
+
+  // Estimate next upgrade cost
+  let estimatedNextUpgradeCost = 200 // Default fallback
+  if (nextTierComponents && nextTierComponents.length > 0) {
+    const nextComponent = nextTierComponents[0]
+    const { data: priceData } = await supabase
+      .from('prices')
+      .select('price')
+      .eq('component_id', nextComponent.id)
+      .eq('in_stock', true)
+      .order('price', { ascending: true })
+      .limit(1)
+
+    if (priceData && priceData.length > 0) {
+      estimatedNextUpgradeCost = priceData[0].price
+    }
+  }
+
+  // Get lowest price for current recommendation
+  const { data: currentPriceData } = await supabase
+    .from('prices')
+    .select('price')
+    .eq('component_id', recommendation.recommendedComponent.id)
+    .eq('in_stock', true)
+    .order('price', { ascending: true })
+    .limit(1)
+
+  const currentUpgradeCost = currentPriceData && currentPriceData.length > 0
+    ? currentPriceData[0].price
+    : 300 // Default fallback
+
+  const totalUpgradeCost = currentUpgradeCost + estimatedNextUpgradeCost
+
+  const recommendationText = timeframe === '6-months'
+    ? `This ${recommendation.componentType.toUpperCase()} upgrade will likely create a ${newBottleneckComponent.toUpperCase()} bottleneck within 6 months for your games. Plan for a ${newBottleneckComponent.toUpperCase()} upgrade (~$${estimatedNextUpgradeCost}) soon after.`
+    : `This ${recommendation.componentType.toUpperCase()} upgrade may create a ${newBottleneckComponent.toUpperCase()} bottleneck within a year for your games. Consider saving ~$${totalUpgradeCost} total for both upgrades.`
+
+  return {
+    willCreateBottleneck: true,
+    timeframe,
+    newBottleneckComponent,
+    newBottleneckSeverity: Math.round(severeBottleneckPercentage),
+    estimatedNextUpgradeCost,
+    totalUpgradeCost,
+    affectedGames: affectedGames.slice(0, 5),
+    recommendation: recommendationText,
+  }
 }
 
 /**
@@ -368,7 +553,7 @@ export async function generateUpgradeRecommendations(params: {
           `GPUs typically remain competitive for ${COMPONENT_LIFESPANS.gpu} years. ` +
           `Upgrading to ${recommended.brand} ${recommended.model} offers ~${performanceGain}% improvement.`
 
-      recommendations.push({
+      const gpuRecommendation: UpgradeRecommendation = {
         componentType: 'gpu',
         currentComponent: `${currentGpu.brand} ${currentGpu.model}`,
         recommendedComponent: recommended,
@@ -379,7 +564,23 @@ export async function generateUpgradeRecommendations(params: {
         affectedGames: gpuBottleneckGames.map((a) => a.game.name),
         prices: [],
         alternatives: alternatives.length > 0 ? alternatives : undefined,
-      })
+        perGameImpact: calculatePerGameImpact('gpu', performanceGain, perGameAnalysis),
+      }
+
+      // Detect if this upgrade creates a new bottleneck
+      if (currentCpu) {
+        const pathWarning = await detectSequentialBottleneck(
+          gpuRecommendation,
+          currentCpu,
+          currentGpu,
+          perGameAnalysis
+        )
+        if (pathWarning) {
+          gpuRecommendation.pathWarning = pathWarning
+        }
+      }
+
+      recommendations.push(gpuRecommendation)
     } else if (gpuIsAged) {
       // Fallback for age-based recommendation when no specific products found
       // Create a generic recommendation without a specific upgrade target
@@ -405,6 +606,7 @@ export async function generateUpgradeRecommendations(params: {
           `Consider browsing current-generation GPUs for a significant performance upgrade.`,
         affectedGames: gpuBottleneckGames.map((a) => a.game.name),
         prices: [],
+        perGameImpact: calculatePerGameImpact('gpu', 100, perGameAnalysis),
       })
     }
   }
@@ -483,7 +685,7 @@ export async function generateUpgradeRecommendations(params: {
           `CPUs typically remain competitive for ${COMPONENT_LIFESPANS.cpu} years. ` +
           `Upgrading to ${recommended.brand} ${recommended.model} offers ~${performanceGain}% improvement.`
 
-      recommendations.push({
+      const cpuRecommendation: UpgradeRecommendation = {
         componentType: 'cpu',
         currentComponent: `${currentCpu.brand} ${currentCpu.model}`,
         recommendedComponent: recommended,
@@ -494,7 +696,23 @@ export async function generateUpgradeRecommendations(params: {
         affectedGames: cpuBottleneckGames.map((a) => a.game.name),
         prices: [],
         alternatives: alternatives.length > 0 ? alternatives : undefined,
-      })
+        perGameImpact: calculatePerGameImpact('cpu', performanceGain, perGameAnalysis),
+      }
+
+      // Detect if this upgrade creates a new bottleneck
+      if (currentGpu) {
+        const pathWarning = await detectSequentialBottleneck(
+          cpuRecommendation,
+          currentCpu,
+          currentGpu,
+          perGameAnalysis
+        )
+        if (pathWarning) {
+          cpuRecommendation.pathWarning = pathWarning
+        }
+      }
+
+      recommendations.push(cpuRecommendation)
     } else if (cpuIsAged) {
       // Fallback for age-based recommendation when no specific products found
       // Create a generic recommendation without a specific upgrade target
@@ -520,6 +738,7 @@ export async function generateUpgradeRecommendations(params: {
           `Consider browsing current-generation CPUs for a significant performance upgrade.`,
         affectedGames: cpuBottleneckGames.map((a) => a.game.name),
         prices: [],
+        perGameImpact: calculatePerGameImpact('cpu', 100, perGameAnalysis),
       })
     }
   }

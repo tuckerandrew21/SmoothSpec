@@ -1,16 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { Slider } from "@/components/ui/slider"
 import { Cpu, ArrowLeft, AlertTriangle, HardDrive, Zap, GitCompare, Save, Copy, Check, Monitor, PiggyBank, ExternalLink, TrendingUp } from "lucide-react"
 import type { BuildData } from "@/types/build"
 import type { Resolution } from "@/lib/resolution-modifier"
+import type { UpgradeRecommendation } from "@/types/analysis"
 import { useBuildAnalysis } from "@/lib/hooks/use-build-analysis"
 import { PerGameBreakdown, UpgradeRecommendationCard, ResultsSkeleton } from "@/components/results"
+import { ComboRecommendationCard } from "@/components/results/combo-recommendation-card"
 import { saveBuildForComparison, hasSavedBuild } from "@/lib/comparison-storage"
 import { GOOD_BUILD_THRESHOLD } from "@/lib/constants"
 
@@ -76,12 +79,66 @@ export function ResultsContent() {
   // Track copy feedback
   const [copied, setCopied] = useState(false)
 
+  // Track budget filter
+  const [maxBudgetFilter, setMaxBudgetFilter] = useState<number | null>(null)
+
   useEffect(() => {
     setSavedSlots({
       a: hasSavedBuild("a"),
       b: hasSavedBuild("b"),
     })
   }, [])
+
+  // Helper functions (must be defined before useMemo hooks that use them)
+  // Get displayed price for a recommendation (mimics card component logic)
+  const getRecommendationDisplayPrice = (rec: UpgradeRecommendation): number | null => {
+    if (rec.prices && rec.prices.length > 0) {
+      const inStockPrice = rec.prices.find(p => p.inStock)
+      return inStockPrice?.price ?? rec.prices[0].price
+    }
+    return null
+  }
+
+  // Calculate value score for a recommendation based on its displayed price
+  const calculateValueScore = (rec: UpgradeRecommendation, displayPrice: number | null): number | null => {
+    if (!displayPrice || displayPrice === 0 || !rec.estimatedPerformanceGain) {
+      return null
+    }
+    return (rec.estimatedPerformanceGain / displayPrice) * 100
+  }
+
+  // Filter recommendations by budget (useMemo must be before early returns)
+  const filteredRecommendations = useMemo(() => {
+    if (!maxBudgetFilter || !analysis) {
+      return analysis?.recommendations ?? []
+    }
+
+    return analysis.recommendations.filter(rec => {
+      const displayPrice = getRecommendationDisplayPrice(rec)
+      return displayPrice === null || displayPrice <= maxBudgetFilter
+    })
+  }, [analysis, maxBudgetFilter])
+
+  // Determine best value recommendation (highest value score) from filtered set
+  const bestValueIndex = useMemo(() => {
+    if (filteredRecommendations.length < 2) {
+      return -1 // Don't show badge if 0-1 recommendations
+    }
+
+    let maxScore = -1
+    let maxIndex = -1
+
+    filteredRecommendations.forEach((rec, idx) => {
+      const displayPrice = getRecommendationDisplayPrice(rec)
+      const score = calculateValueScore(rec, displayPrice)
+      if (score !== null && score > maxScore) {
+        maxScore = score
+        maxIndex = idx
+      }
+    })
+
+    return maxIndex
+  }, [filteredRecommendations])
 
   const handleSaveForComparison = (slot: "a" | "b") => {
     if (!buildData) return
@@ -494,16 +551,93 @@ Analyzed with SmoothSpec`
                 Prioritized Recommendations
               </h2>
               <p className="mt-1 text-xs sm:text-base text-muted-foreground">
-                Upgrade suggestions optimized for your games and budget
+                {maxBudgetFilter && filteredRecommendations.length < analysis.recommendations.length
+                  ? `Showing ${filteredRecommendations.length} of ${analysis.recommendations.length} recommendations under $${maxBudgetFilter}`
+                  : 'Upgrade suggestions optimized for your games and budget'
+                }
               </p>
             </div>
 
+            {/* Budget Filter */}
+            {analysis.recommendations.length > 1 && (
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-lg bg-muted/30 border border-border">
+                <div className="flex items-center gap-3 flex-1">
+                  <PiggyBank className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-card-foreground block mb-2">
+                      Filter by Max Price
+                    </label>
+                    <Slider
+                      value={[maxBudgetFilter ?? 2000]}
+                      onValueChange={([val]) => setMaxBudgetFilter(val === 2000 ? null : val)}
+                      min={100}
+                      max={2000}
+                      step={100}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="text-sm font-medium text-card-foreground min-w-[80px] text-right">
+                    {maxBudgetFilter ? `$${maxBudgetFilter}` : 'All'}
+                  </div>
+                </div>
+                {maxBudgetFilter && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMaxBudgetFilter(null)}
+                    className="text-xs shrink-0"
+                  >
+                    Clear Filter
+                  </Button>
+                )}
+              </div>
+            )}
+
             <div className="space-y-4 sm:space-y-6">
-              {analysis.recommendations.map((rec, index) => (
+              {filteredRecommendations.map((rec, index) => (
                 <UpgradeRecommendationCard
                   key={`${rec.componentType}-${index}`}
                   recommendation={rec}
                   index={index}
+                  budget={buildData.budget}
+                  isBestValue={index === bestValueIndex}
+                />
+              ))}
+            </div>
+
+            {/* No results message when all filtered out */}
+            {filteredRecommendations.length === 0 && maxBudgetFilter && (
+              <Card className="border-yellow-500/50 bg-yellow-500/5 p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No upgrades found under ${maxBudgetFilter}. Try increasing your budget or{' '}
+                  <button
+                    type="button"
+                    onClick={() => setMaxBudgetFilter(null)}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    clear the filter
+                  </button>
+                  .
+                </p>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Combo Recommendations Section */}
+        {analysis && analysis.comboRecommendations && analysis.comboRecommendations.length > 0 && (
+          <div className="mt-8 sm:mt-12">
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-lg sm:text-2xl font-bold">Smart Budget Splits</h2>
+              <p className="text-muted-foreground text-sm sm:text-base mt-1">
+                Get more performance by upgrading both CPU and GPU together
+              </p>
+            </div>
+            <div className="space-y-4">
+              {analysis.comboRecommendations.map((combo, i) => (
+                <ComboRecommendationCard
+                  key={`combo-${i}`}
+                  combo={combo}
                   budget={buildData.budget}
                 />
               ))}

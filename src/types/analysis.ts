@@ -57,6 +57,17 @@ export interface UpgradeCandidate {
   seedPrice: number // Price used for filtering (from our DB)
 }
 
+export interface UpgradePathWarning {
+  willCreateBottleneck: boolean
+  timeframe: '6-months' | '1-year'
+  newBottleneckComponent: 'cpu' | 'gpu'
+  newBottleneckSeverity: number
+  estimatedNextUpgradeCost: number
+  totalUpgradeCost: number
+  affectedGames: string[]
+  recommendation: string
+}
+
 export interface UpgradeRecommendation {
   componentType: 'cpu' | 'gpu' | 'ram' | 'storage' | 'psu'
   currentComponent: string
@@ -69,6 +80,36 @@ export interface UpgradeRecommendation {
   prices: PriceInfo[]
   // Alternative candidates for fallback if primary is over budget
   alternatives?: UpgradeCandidate[]
+  // Per-game impact breakdown
+  perGameImpact?: Array<{
+    gameName: string
+    estimatedImprovement: number // percentage (0-100)
+    impactLevel: 'high' | 'medium' | 'low'
+  }>
+  // Upgrade path warning (sequential bottleneck detection)
+  pathWarning?: UpgradePathWarning
+}
+
+export interface ComboRecommendation {
+  components: { cpu: Component; gpu: Component }
+  totalCost: number
+  totalPerformanceGain: number // Weighted average across games
+  reasonForCombo: string
+  affectedGames: string[]
+  perGameImpact: Array<{
+    gameName: string
+    cpuContribution: number
+    gpuContribution: number
+    totalImprovement: number
+  }>
+  warnsAboutNewBottleneck: boolean
+  newBottleneckComponent?: 'cpu' | 'gpu'
+  comparedToSingleUpgrade?: {
+    component: 'cpu' | 'gpu'
+    cost: number
+    gain: number
+    differenceGain: number
+  }
 }
 
 export interface StorageAnalysis {
@@ -97,6 +138,7 @@ export interface BuildAnalysisResult {
   storageAnalysis: StorageAnalysis | null
   psuAnalysis: PsuAnalysis | null
   recommendations: UpgradeRecommendation[]
+  comboRecommendations?: ComboRecommendation[]
   warnings: string[]
   dataQuality: DataQuality
   partialFailures: PartialFailure[]
