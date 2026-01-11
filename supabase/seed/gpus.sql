@@ -1,8 +1,91 @@
 -- GPU Seed Data for Smoothspec
 -- Benchmark scores based on PassMark G3D performance
--- Current gen: NVIDIA RTX 40 series, AMD RX 7000 series
+-- Current gen: NVIDIA RTX 50 series, AMD RX 7000 series
 
 INSERT INTO components (type, brand, model, release_year, benchmark_score, specs) VALUES
+
+-- =============================================================================
+-- LATEST GENERATION (2025-2026)
+-- =============================================================================
+
+-- NVIDIA RTX 50 Series (Blackwell) - 2025
+-- Source: PassMark G3D benchmarks (January 2026)
+-- Architecture: Blackwell with 4th gen RT cores and 5th gen Tensor cores
+('gpu', 'NVIDIA', 'GeForce RTX 5090', 2025, 38838, '{
+  "vram": 32,
+  "memory_type": "GDDR7",
+  "tdp": 575,
+  "architecture": "Blackwell",
+  "ray_tracing": true,
+  "dlss": 4
+}'::jsonb),
+
+('gpu', 'NVIDIA', 'GeForce RTX 5080', 2025, 35821, '{
+  "vram": 16,
+  "memory_type": "GDDR7",
+  "tdp": 360,
+  "architecture": "Blackwell",
+  "ray_tracing": true,
+  "dlss": 4
+}'::jsonb),
+
+('gpu', 'NVIDIA', 'GeForce RTX 5070 Ti', 2025, 32485, '{
+  "vram": 16,
+  "memory_type": "GDDR7",
+  "tdp": 300,
+  "architecture": "Blackwell",
+  "ray_tracing": true,
+  "dlss": 4
+}'::jsonb),
+
+('gpu', 'NVIDIA', 'GeForce RTX 5070', 2025, 28808, '{
+  "vram": 12,
+  "memory_type": "GDDR7",
+  "tdp": 250,
+  "architecture": "Blackwell",
+  "ray_tracing": true,
+  "dlss": 4
+}'::jsonb),
+
+('gpu', 'NVIDIA', 'GeForce RTX 5060 Ti 16GB', 2025, 22749, '{
+  "vram": 16,
+  "memory_type": "GDDR7",
+  "tdp": 180,
+  "architecture": "Blackwell",
+  "ray_tracing": true,
+  "dlss": 4
+}'::jsonb),
+
+('gpu', 'NVIDIA', 'GeForce RTX 5060 Ti 8GB', 2025, 22625, '{
+  "vram": 8,
+  "memory_type": "GDDR7",
+  "tdp": 180,
+  "architecture": "Blackwell",
+  "ray_tracing": true,
+  "dlss": 4
+}'::jsonb),
+
+('gpu', 'NVIDIA', 'GeForce RTX 5060', 2025, 20816, '{
+  "vram": 8,
+  "memory_type": "GDDR7",
+  "tdp": 150,
+  "architecture": "Blackwell",
+  "ray_tracing": true,
+  "dlss": 4
+}'::jsonb),
+
+('gpu', 'NVIDIA', 'GeForce RTX 5050', 2025, 17164, '{
+  "vram": 8,
+  "memory_type": "GDDR6",
+  "tdp": 130,
+  "architecture": "Blackwell",
+  "ray_tracing": true,
+  "dlss": 4
+}'::jsonb),
+
+-- =============================================================================
+-- RECENT GENERATION (2023-2024)
+-- =============================================================================
 
 -- NVIDIA RTX 40 Series (Ada Lovelace)
 ('gpu', 'NVIDIA', 'GeForce RTX 4060', 2023, 13000, '{
