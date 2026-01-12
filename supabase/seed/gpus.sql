@@ -83,6 +83,35 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
   "dlss": 4
 }'::jsonb),
 
+-- AMD Radeon RX 9000 Series (RDNA 4) - 2025
+('gpu', 'AMD', 'Radeon RX 9070', 2025, 25431, '{
+  "vram": 16,
+  "memory_type": "GDDR6",
+  "tdp": 260,
+  "architecture": "RDNA 4",
+  "ray_tracing": true,
+  "compute_units": 56,
+  "shading_units": 4096,
+  "memory_bus_width": 256,
+  "base_clock": 2210,
+  "boost_clock": 2700,
+  "dlss": 4
+}'::jsonb),
+
+('gpu', 'AMD', 'Radeon RX 9070 XT', 2025, 26868, '{
+  "vram": 16,
+  "memory_type": "GDDR6",
+  "tdp": 280,
+  "architecture": "RDNA 4",
+  "ray_tracing": true,
+  "compute_units": 60,
+  "shading_units": 4352,
+  "memory_bus_width": 256,
+  "base_clock": 2300,
+  "boost_clock": 2850,
+  "dlss": 4
+}'::jsonb),
+
 -- =============================================================================
 -- RECENT GENERATION (2023-2024)
 -- =============================================================================
