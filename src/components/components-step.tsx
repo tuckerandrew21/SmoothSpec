@@ -6,8 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { ErrorAlert } from "@/components/ui/error-alert"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Check } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import {
   useComponentBrands,
@@ -15,7 +13,6 @@ import {
   useComponentsByFamily,
   FAMILY_EXAMPLES,
 } from "@/lib/hooks/use-components"
-import { BUILD_PRESETS, findComponentByName, type BuildPreset } from "@/lib/presets"
 import type { BuildData } from "@/types/build"
 import type { Resolution } from "@/lib/resolution-modifier"
 
@@ -25,10 +22,6 @@ interface ComponentsStepProps {
 }
 
 export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepProps) {
-  // Preset state
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
-  const [applyingPreset, setApplyingPreset] = useState(false)
-
   // CPU cascading state
   const [cpuBrand, setCpuBrand] = useState<string>("")
   const [cpuFamily, setCpuFamily] = useState<string>("")
@@ -40,50 +33,6 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
   // RAM state
   const [ramType, setRamType] = useState<string>("")
   const [ramSize, setRamSize] = useState<string>("")
-
-  // Apply preset function
-  const applyPreset = async (preset: BuildPreset) => {
-    console.log(`🎮 Applying preset: ${preset.name}`)
-    setApplyingPreset(true)
-    try {
-      // Lookup component IDs
-      const cpuId = await findComponentByName(preset.components.cpu, 'cpu', supabase)
-      const gpuId = await findComponentByName(preset.components.gpu, 'gpu', supabase)
-
-      console.log(`📊 Lookup results - CPU ID: ${cpuId}, GPU ID: ${gpuId}`)
-
-      if (cpuId && gpuId) {
-        console.log(`✅ Both components found, applying preset...`)
-        updateBuildData({
-          cpu: cpuId,
-          gpu: gpuId,
-          ram: preset.components.ram,
-          storage: preset.components.storage || buildData.storage,
-          psu: preset.components.psu || buildData.psu,
-          resolution: preset.targetResolution,
-        })
-        setSelectedPreset(preset.name)
-
-        // Reset cascading dropdowns since we're setting IDs directly
-        setCpuBrand("")
-        setCpuFamily("")
-        setGpuBrand("")
-        setGpuFamily("")
-
-        // Set RAM state
-        const [type, size] = preset.components.ram.split('-')
-        setRamType(type)
-        setRamSize(size)
-        console.log(`🎉 Preset "${preset.name}" applied successfully`)
-      } else {
-        console.error(`❌ Cannot apply preset - missing components. CPU: ${cpuId}, GPU: ${gpuId}`)
-      }
-    } catch (error) {
-      console.error('Failed to apply preset:', error)
-    } finally {
-      setApplyingPreset(false)
-    }
-  }
 
   // Fetch data for cascading dropdowns
   const { brands: cpuBrands, loading: cpuBrandsLoading, error: cpuBrandsError } = useComponentBrands("cpu")
@@ -129,34 +78,16 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
         <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">Enter your current hardware components</p>
       </div>
 
-      {/* Quick Start Presets */}
+      {/* Helper Text */}
       <Card className="bg-blue-500/5 border-blue-500/20 p-4">
-        <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-          🚀 Quick Start: Choose a preset build
-        </h3>
-        <div className="grid gap-2">
-          {BUILD_PRESETS.map((preset) => (
-            <Button
-              key={preset.name}
-              variant={selectedPreset === preset.name ? 'default' : 'outline'}
-              onClick={() => applyPreset(preset)}
-              disabled={applyingPreset}
-              className="justify-start text-left h-auto py-3"
-            >
-              <div className="flex flex-col items-start w-full">
-                <div className="font-medium">{preset.name}</div>
-                <div className="text-xs opacity-70">{preset.description}</div>
-                <div className="text-xs opacity-50 mt-1">~${preset.estimatedCost}</div>
-              </div>
-            </Button>
-          ))}
+        <div className="space-y-2 text-sm">
+          <p className="font-medium">💡 Not sure where your hardware is?</p>
+          <ul className="space-y-1 text-xs text-muted-foreground ml-4">
+            <li>• <strong>Windows:</strong> Right-click Start → System → Device specifications</li>
+            <li>• <strong>Linux:</strong> Run <code className="bg-black/10 px-1 rounded">lscpu</code> and <code className="bg-black/10 px-1 rounded">lspci | grep VGA</code></li>
+          </ul>
+          <p className="text-xs text-muted-foreground mt-2">Note: This tool is for desktop PCs with upgradeable components (not Macs or laptops).</p>
         </div>
-        {selectedPreset && (
-          <div className="mt-3 flex items-center gap-2 text-xs text-green-600">
-            <Check className="h-3 w-3" />
-            Preset applied. Modify components below if needed.
-          </div>
-        )}
       </Card>
 
       {/* Core Components Section */}

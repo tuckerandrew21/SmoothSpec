@@ -48,8 +48,12 @@ next-env.d.ts
 # Playwright MCP
 .playwright-mcp/
 
+# MCP Configuration (contains tokens)
+.mcp.json
+
 # Temp files
 env.download
+nul
 
 # Supabase CLI state
 supabase/.temp/
