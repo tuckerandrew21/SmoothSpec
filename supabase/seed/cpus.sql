@@ -584,6 +584,136 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
 }'::jsonb),
 
 -- =============================================================================
+-- INTEL DESKTOP CPUs WITH INTEGRATED GRAPHICS (4th-8th Gen)
+-- =============================================================================
+
+-- 4th Generation (Haswell, 2013-2014) with HD Graphics
+('cpu', 'Intel', 'Core i5-4570', 2013, 5842, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.2,
+  "boost_clock": 3.6,
+  "tdp": 84,
+  "socket": "LGA1150",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel HD Graphics 4600"
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i7-4770K', 2013, 7147, '{
+  "cores": 4,
+  "threads": 8,
+  "base_clock": 3.5,
+  "boost_clock": 3.9,
+  "tdp": 84,
+  "socket": "LGA1150",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel HD Graphics 4600"
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-4670K', 2013, 5621, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.4,
+  "boost_clock": 3.8,
+  "tdp": 84,
+  "socket": "LGA1150",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel HD Graphics 4600"
+}'::jsonb),
+
+-- 5th Generation (Broadwell, 2014-2015) with Iris Pro Graphics
+('cpu', 'Intel', 'Core i5-5675C', 2014, 5988, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.1,
+  "boost_clock": 3.5,
+  "tdp": 65,
+  "socket": "LGA1150",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Iris Pro Graphics 6200"
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i7-5775C', 2014, 7712, '{
+  "cores": 4,
+  "threads": 8,
+  "base_clock": 3.3,
+  "boost_clock": 3.7,
+  "tdp": 65,
+  "socket": "LGA1150",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Iris Pro Graphics 6200"
+}'::jsonb),
+
+-- 6th Generation (Skylake, 2015-2016) with HD Graphics
+('cpu', 'Intel', 'Core i5-6500', 2015, 6211, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.2,
+  "boost_clock": 3.6,
+  "tdp": 65,
+  "socket": "LGA1151",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel HD Graphics 530"
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i7-6700K', 2015, 7236, '{
+  "cores": 4,
+  "threads": 8,
+  "base_clock": 4.0,
+  "boost_clock": 4.2,
+  "tdp": 91,
+  "socket": "LGA1151",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel HD Graphics 530"
+}'::jsonb),
+
+-- 7th Generation (Kaby Lake, 2017) with HD Graphics
+('cpu', 'Intel', 'Core i5-7500', 2017, 6512, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.4,
+  "boost_clock": 3.8,
+  "tdp": 65,
+  "socket": "LGA1151",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel HD Graphics 630"
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i7-7700K', 2017, 7512, '{
+  "cores": 4,
+  "threads": 8,
+  "base_clock": 4.2,
+  "boost_clock": 4.5,
+  "tdp": 91,
+  "socket": "LGA1151",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel HD Graphics 630"
+}'::jsonb),
+
+-- 8th Generation (Coffee Lake, 2017-2018) with UHD Graphics
+('cpu', 'Intel', 'Core i5-8400', 2017, 7021, '{
+  "cores": 6,
+  "threads": 6,
+  "base_clock": 2.8,
+  "boost_clock": 4.0,
+  "tdp": 65,
+  "socket": "LGA1151",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel UHD Graphics 630"
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i7-8700K', 2017, 8542, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.7,
+  "boost_clock": 4.7,
+  "tdp": 95,
+  "socket": "LGA1151",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel UHD Graphics 630"
+}'::jsonb),
+
+-- =============================================================================
 -- RECENT GENERATION (2023-2024)
 -- =============================================================================
 
