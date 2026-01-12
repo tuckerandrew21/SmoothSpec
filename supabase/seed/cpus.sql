@@ -324,6 +324,186 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
 }'::jsonb),
 
 -- =============================================================================
+-- EARLIER INTEL DESKTOP GENERATIONS
+-- =============================================================================
+
+-- Intel 4th Gen (Haswell) - 2013-2014
+('cpu', 'Intel', 'Core i7-4770K', 2013, 9540, '{
+  "cores": 4,
+  "threads": 8,
+  "base_clock": 3.5,
+  "boost_clock": 3.9,
+  "tdp": 84,
+  "socket": "LGA1150",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-4670K', 2013, 8237, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.4,
+  "boost_clock": 3.8,
+  "tdp": 84,
+  "socket": "LGA1150",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i3-4130', 2013, 5221, '{
+  "cores": 2,
+  "threads": 4,
+  "base_clock": 3.4,
+  "boost_clock": null,
+  "tdp": 54,
+  "socket": "LGA1150",
+  "integrated_graphics": true
+}'::jsonb),
+
+-- Intel 5th Gen (Broadwell) - 2014-2015
+('cpu', 'Intel', 'Core i7-5775C', 2015, 9823, '{
+  "cores": 4,
+  "threads": 8,
+  "base_clock": 3.3,
+  "boost_clock": 3.7,
+  "tdp": 65,
+  "socket": "LGA1150",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-5675C', 2015, 8541, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.1,
+  "boost_clock": 3.6,
+  "tdp": 65,
+  "socket": "LGA1150",
+  "integrated_graphics": true
+}'::jsonb),
+
+-- Intel 6th Gen (Skylake) - 2015-2016
+('cpu', 'Intel', 'Core i7-6700K', 2015, 10524, '{
+  "cores": 4,
+  "threads": 8,
+  "base_clock": 4.0,
+  "boost_clock": 4.2,
+  "tdp": 91,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-6600K', 2015, 9052, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.5,
+  "boost_clock": 3.9,
+  "tdp": 91,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i3-6100', 2015, 5843, '{
+  "cores": 2,
+  "threads": 4,
+  "base_clock": 3.7,
+  "boost_clock": null,
+  "tdp": 51,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+-- Intel 7th Gen (Kaby Lake) - 2016-2017
+('cpu', 'Intel', 'Core i7-7700K', 2017, 11232, '{
+  "cores": 4,
+  "threads": 8,
+  "base_clock": 4.2,
+  "boost_clock": 4.5,
+  "tdp": 91,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-7600K', 2017, 9512, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.8,
+  "boost_clock": 4.2,
+  "tdp": 91,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i3-7350K', 2017, 6012, '{
+  "cores": 2,
+  "threads": 4,
+  "base_clock": 4.2,
+  "boost_clock": null,
+  "tdp": 60,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+-- Intel 8th Gen (Coffee Lake) - 2017-2018
+('cpu', 'Intel', 'Core i7-8700K', 2017, 13458, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.7,
+  "boost_clock": 4.7,
+  "tdp": 95,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-8600K', 2017, 11232, '{
+  "cores": 6,
+  "threads": 6,
+  "base_clock": 3.6,
+  "boost_clock": 4.3,
+  "tdp": 95,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i3-8350K', 2017, 7521, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 4.0,
+  "boost_clock": null,
+  "tdp": 91,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+-- Intel 9th Gen (Coffee Lake Refresh) - 2018-2019
+('cpu', 'Intel', 'Core i7-9700K', 2018, 14562, '{
+  "cores": 8,
+  "threads": 8,
+  "base_clock": 3.6,
+  "boost_clock": 4.9,
+  "tdp": 95,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i5-9600K', 2018, 12032, '{
+  "cores": 6,
+  "threads": 6,
+  "base_clock": 3.7,
+  "boost_clock": 4.6,
+  "tdp": 95,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'Intel', 'Core i3-9350K', 2018, 8021, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 4.0,
+  "boost_clock": 4.6,
+  "tdp": 91,
+  "socket": "LGA1151",
+  "integrated_graphics": true
+}'::jsonb),
+
+-- =============================================================================
 -- RECENT GENERATION (2023-2024)
 -- =============================================================================
 
