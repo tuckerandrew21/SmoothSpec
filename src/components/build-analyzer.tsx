@@ -91,35 +91,37 @@ export function BuildAnalyzer() {
       </div>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-4xl px-4 py-6 sm:py-12 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-4xl px-4 py-6 sm:py-12 sm:px-6 lg:px-8 pb-24">
         <Card className="border-border bg-card p-4 sm:p-8 md:p-12">
           {currentStep === 1 && <ComponentsStep buildData={buildData} updateBuildData={updateBuildData} />}
           {currentStep === 2 && <UsageStep buildData={buildData} updateBuildData={updateBuildData} />}
           {currentStep === 3 && <BudgetStep buildData={buildData} updateBuildData={updateBuildData} />}
-
-          {/* Navigation Buttons */}
-          <div className="mt-8 sm:mt-12 flex items-center justify-between gap-3 sm:gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBack}
-              disabled={currentStep === 1}
-              className="gap-1.5 sm:gap-2 bg-transparent text-xs sm:text-sm"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Back
-            </Button>
-
-            {currentStep < totalSteps ? (
-              <Button size="sm" onClick={handleNext} className="text-xs sm:text-sm">Continue</Button>
-            ) : (
-              <Link href={`/results?data=${encodeURIComponent(JSON.stringify(buildData))}`} onClick={handleAnalyze}>
-                <Button size="sm" className="gap-2 text-xs sm:text-sm">Analyze My Build</Button>
-              </Link>
-            )}
-          </div>
         </Card>
       </main>
+
+      {/* Sticky Navigation Buttons */}
+      <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto max-w-4xl px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 sm:gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBack}
+            disabled={currentStep === 1}
+            className="gap-1.5 sm:gap-2 bg-transparent text-xs sm:text-sm"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            Back
+          </Button>
+
+          {currentStep < totalSteps ? (
+            <Button size="sm" onClick={handleNext} className="text-xs sm:text-sm">Continue</Button>
+          ) : (
+            <Link href={`/results?data=${encodeURIComponent(JSON.stringify(buildData))}`} onClick={handleAnalyze}>
+              <Button size="sm" className="gap-2 text-xs sm:text-sm">Analyze My Build</Button>
+            </Link>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
