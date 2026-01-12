@@ -43,13 +43,17 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
 
   // Apply preset function
   const applyPreset = async (preset: BuildPreset) => {
+    console.log(`🎮 Applying preset: ${preset.name}`)
     setApplyingPreset(true)
     try {
       // Lookup component IDs
       const cpuId = await findComponentByName(preset.components.cpu, 'cpu', supabase)
       const gpuId = await findComponentByName(preset.components.gpu, 'gpu', supabase)
 
+      console.log(`📊 Lookup results - CPU ID: ${cpuId}, GPU ID: ${gpuId}`)
+
       if (cpuId && gpuId) {
+        console.log(`✅ Both components found, applying preset...`)
         updateBuildData({
           cpu: cpuId,
           gpu: gpuId,
@@ -70,6 +74,9 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
         const [type, size] = preset.components.ram.split('-')
         setRamType(type)
         setRamSize(size)
+        console.log(`🎉 Preset "${preset.name}" applied successfully`)
+      } else {
+        console.error(`❌ Cannot apply preset - missing components. CPU: ${cpuId}, GPU: ${gpuId}`)
       }
     } catch (error) {
       console.error('Failed to apply preset:', error)
@@ -160,7 +167,9 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
 
         {/* CPU Selection */}
         <div className="space-y-2">
-          <Label className="text-sm text-card-foreground font-medium">CPU (Processor)</Label>
+          <Label className="text-sm text-card-foreground font-medium">
+            CPU (Processor) <span className="text-destructive">*</span>
+          </Label>
           {cpuBrandsError || cpusError ? (
             <ErrorAlert message="Failed to load CPUs" />
           ) : (
@@ -226,7 +235,9 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
 
         {/* GPU Selection */}
         <div className="space-y-2">
-          <Label className="text-sm text-card-foreground font-medium">GPU (Graphics Card)</Label>
+          <Label className="text-sm text-card-foreground font-medium">
+            GPU (Graphics Card) <span className="text-destructive">*</span>
+          </Label>
           {gpuBrandsError || gpusError ? (
             <ErrorAlert message="Failed to load GPUs" />
           ) : (
@@ -301,7 +312,9 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
 
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label className="text-sm text-card-foreground">RAM Type</Label>
+              <Label className="text-sm text-card-foreground font-medium">
+                RAM Type <span className="text-destructive">*</span>
+              </Label>
               <Select value={ramType} onValueChange={setRamType}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
@@ -314,7 +327,9 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm text-card-foreground">RAM Size</Label>
+              <Label className="text-sm text-card-foreground font-medium">
+                RAM Size <span className="text-destructive">*</span>
+              </Label>
               <Select value={ramSize} onValueChange={setRamSize}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select size" />
@@ -383,7 +398,9 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
         </h3>
 
         <div className="space-y-2">
-          <Label htmlFor="resolution" className="text-sm text-card-foreground">Gaming Resolution</Label>
+          <Label htmlFor="resolution" className="text-sm text-card-foreground font-medium">
+            Gaming Resolution <span className="text-destructive">*</span>
+          </Label>
           <Select
             value={buildData.resolution}
             onValueChange={(value: Resolution) => updateBuildData({ resolution: value })}
