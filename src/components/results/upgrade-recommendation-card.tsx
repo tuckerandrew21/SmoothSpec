@@ -46,10 +46,6 @@ interface UpgradeRecommendationCardProps {
 const BUDGET_TOLERANCE_PERCENT = 0.10 // 10% over budget is "close"
 const BUDGET_TOLERANCE_ABSOLUTE = 50 // Or $50 over budget
 
-// Cap displayed performance gain to avoid misleading users
-// PassMark benchmarks can show 500%+ gains which don't reflect real gaming performance
-const MAX_DISPLAYED_GAIN = 150
-
 // Price data for a candidate
 interface CandidatePriceData {
   component: Component
@@ -328,10 +324,7 @@ export function UpgradeRecommendationCard({
               {displayPerformanceGain > 0 && (
                 <p className="text-green-500">
                   <span className="font-medium">Performance gain:</span>{" "}
-                  {displayPerformanceGain > MAX_DISPLAYED_GAIN
-                    ? `${MAX_DISPLAYED_GAIN}%+ (substantial upgrade)`
-                    : `~${displayPerformanceGain}%`
-                  }
+                  ~{displayPerformanceGain}%
                 </p>
               )}
             </div>
@@ -407,11 +400,7 @@ export function UpgradeRecommendationCard({
           <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
             {usedFallback
-              ? `Upgrading to ${displayComponent.brand} ${displayComponent.model} offers ${
-                  displayPerformanceGain > MAX_DISPLAYED_GAIN
-                    ? `${MAX_DISPLAYED_GAIN}%+`
-                    : `~${displayPerformanceGain}%`
-                } improvement over your current setup.`
+              ? `Upgrading to ${displayComponent.brand} ${displayComponent.model} offers ~${displayPerformanceGain}% improvement over your current setup.`
               : recommendation.reason}
           </p>
         </div>

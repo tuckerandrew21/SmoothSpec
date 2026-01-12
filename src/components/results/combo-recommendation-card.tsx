@@ -9,9 +9,6 @@ import type { ComboRecommendation } from "@/types/analysis"
 import { fetchComponentPrices, getRetailerLinksForComponent, type RetailerLinksResult } from "@/app/actions/prices"
 import { trackAffiliateClicked } from "@/lib/analytics"
 
-// Cap displayed performance gain to avoid misleading users
-const MAX_DISPLAYED_GAIN = 150
-
 interface ComponentPriceData {
   realPrice: number | null
   priceRetailer: string | null
@@ -130,10 +127,7 @@ export function ComboRecommendationCard({
               {combo.totalPerformanceGain > 0 && (
                 <p className="text-green-500 font-medium">
                   Combined Performance gain:{" "}
-                  {combo.totalPerformanceGain > MAX_DISPLAYED_GAIN
-                    ? `${MAX_DISPLAYED_GAIN}%+ (substantial upgrade)`
-                    : `~${combo.totalPerformanceGain}%`
-                  }
+                  ~{combo.totalPerformanceGain}%
                 </p>
               )}
             </div>
