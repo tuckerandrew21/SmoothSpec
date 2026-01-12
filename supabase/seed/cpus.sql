@@ -236,6 +236,94 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
 }'::jsonb),
 
 -- =============================================================================
+-- EARLIER AMD RYZEN DESKTOP GENERATIONS
+-- =============================================================================
+
+-- AMD Ryzen 1000 Series (Zen 1) - 2017
+('cpu', 'AMD', 'Ryzen 7 1800X', 2017, 12989, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.6,
+  "boost_clock": 4.0,
+  "tdp": 95,
+  "socket": "AM4",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'AMD', 'Ryzen 5 1600X', 2017, 9756, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.6,
+  "boost_clock": 4.0,
+  "tdp": 95,
+  "socket": "AM4",
+  "integrated_graphics": false
+}'::jsonb),
+
+-- AMD Ryzen 2000 Series (Zen+) - 2018
+('cpu', 'AMD', 'Ryzen 7 2700X', 2018, 14601, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.7,
+  "boost_clock": 4.3,
+  "tdp": 105,
+  "socket": "AM4",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'AMD', 'Ryzen 5 2600X', 2018, 11236, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.6,
+  "boost_clock": 4.2,
+  "tdp": 95,
+  "socket": "AM4",
+  "integrated_graphics": false
+}'::jsonb),
+
+-- AMD Ryzen 3000 Series (Zen 2) - 2019
+('cpu', 'AMD', 'Ryzen 7 3700X', 2019, 17202, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.6,
+  "boost_clock": 4.4,
+  "tdp": 65,
+  "socket": "AM4",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'AMD', 'Ryzen 5 3600X', 2019, 13576, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.8,
+  "boost_clock": 4.4,
+  "tdp": 95,
+  "socket": "AM4",
+  "integrated_graphics": false
+}'::jsonb),
+
+-- AMD Ryzen 4000 Series (Zen 2) - 2020
+('cpu', 'AMD', 'Ryzen 7 4700G', 2020, 15888, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 3.6,
+  "boost_clock": 4.4,
+  "tdp": 65,
+  "socket": "AM4",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'AMD', 'Ryzen 5 4650G', 2020, 12445, '{
+  "cores": 6,
+  "threads": 12,
+  "base_clock": 3.7,
+  "boost_clock": 4.3,
+  "tdp": 65,
+  "socket": "AM4",
+  "integrated_graphics": true
+}'::jsonb),
+
+-- =============================================================================
 -- RECENT GENERATION (2023-2024)
 -- =============================================================================
 
