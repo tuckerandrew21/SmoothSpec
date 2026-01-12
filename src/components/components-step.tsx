@@ -338,7 +338,9 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
 
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="storage" className="text-sm text-card-foreground">Storage Type</Label>
+              <Label htmlFor="storage" className="text-sm text-card-foreground font-medium">
+                Storage Type <span className="text-destructive">*</span>
+              </Label>
               <Select value={buildData.storage} onValueChange={(value) => updateBuildData({ storage: value })}>
                 <SelectTrigger id="storage">
                   <SelectValue placeholder="Select type" />
@@ -352,7 +354,9 @@ export function ComponentsStep({ buildData, updateBuildData }: ComponentsStepPro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="psu" className="text-sm text-card-foreground">PSU Wattage</Label>
+              <Label htmlFor="psu" className="text-sm text-card-foreground font-medium">
+                PSU Wattage <span className="text-destructive">*</span>
+              </Label>
               <Select value={buildData.psu} onValueChange={(value) => updateBuildData({ psu: value })}>
                 <SelectTrigger id="psu">
                   <SelectValue placeholder="Select wattage" />

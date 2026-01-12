@@ -39,8 +39,35 @@ export function BuildAnalyzer() {
   const totalSteps = 3
   const progress = (currentStep / totalSteps) * 100
 
+  const canProceed = () => {
+    if (currentStep === 1) {
+      // All fields required in ComponentsStep
+      return (
+        buildData.cpu &&
+        buildData.gpu &&
+        buildData.ram &&
+        buildData.storage &&
+        buildData.psu &&
+        buildData.resolution
+      )
+    }
+    if (currentStep === 2) {
+      // At least one game required
+      return buildData.games.length > 0
+    }
+    if (currentStep === 3) {
+      // Budget always has value (default 500)
+      return buildData.budget > 0
+    }
+    return false
+  }
+
   const handleNext = () => {
     if (currentStep < totalSteps) {
+      // Validate current step before proceeding
+      if (!canProceed()) {
+        return // Prevent navigation if validation fails
+      }
       trackStepCompleted(currentStep, stepNames[currentStep - 1])
       setCurrentStep(currentStep + 1)
     }
@@ -114,10 +141,23 @@ export function BuildAnalyzer() {
           </Button>
 
           {currentStep < totalSteps ? (
-            <Button size="sm" onClick={handleNext} className="text-xs sm:text-sm">Continue</Button>
+            <Button
+              size="sm"
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className="text-xs sm:text-sm"
+            >
+              Continue
+            </Button>
           ) : (
             <Link href={`/results?data=${encodeURIComponent(JSON.stringify(buildData))}`} onClick={handleAnalyze}>
-              <Button size="sm" className="gap-2 text-xs sm:text-sm">Analyze My Build</Button>
+              <Button
+                size="sm"
+                disabled={!canProceed()}
+                className="gap-2 text-xs sm:text-sm"
+              >
+                Analyze My Build
+              </Button>
             </Link>
           )}
         </div>
