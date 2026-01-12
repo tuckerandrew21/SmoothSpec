@@ -728,6 +728,22 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
   }
 }'::jsonb),
 
+-- Intel 14th Gen (Raptor Lake Refresh) - 2023
+('cpu', 'Intel', 'Core i5-14600K', 2023, 32000, '{
+  "cores": 14,
+  "threads": 20,
+  "base_clock": 3.5,
+  "boost_clock": 5.3,
+  "tdp": 125,
+  "socket": "LGA1700",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel UHD 770",
+  "core_config": {
+    "performance_cores": 6,
+    "efficiency_cores": 8
+  }
+}'::jsonb),
+
 -- =============================================================================
 -- RECENT GENERATION (2023-2024)
 -- =============================================================================
