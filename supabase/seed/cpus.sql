@@ -713,6 +713,21 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
   "integrated_graphics_model": "Intel UHD Graphics 630"
 }'::jsonb),
 
+-- AMD Ryzen 9000 X3D Series - 2024
+('cpu', 'AMD', 'Ryzen 7 9800X3D', 2024, 39970, '{
+  "cores": 8,
+  "threads": 16,
+  "base_clock": 4.7,
+  "boost_clock": 5.2,
+  "tdp": 120,
+  "socket": "AM5",
+  "integrated_graphics": false,
+  "cache": {
+    "l3": 96,
+    "l2": 8
+  }
+}'::jsonb),
+
 -- =============================================================================
 -- RECENT GENERATION (2023-2024)
 -- =============================================================================
