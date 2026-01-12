@@ -504,6 +504,51 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
 }'::jsonb),
 
 -- =============================================================================
+-- AMD FX DESKTOP SERIES (Legacy AMD CPUs)
+-- =============================================================================
+
+-- AMD FX Series (Vishera, Piledriver Architecture) - 2011-2014
+('cpu', 'AMD', 'FX-8350', 2012, 6090, '{
+  "cores": 8,
+  "threads": 8,
+  "base_clock": 4.0,
+  "boost_clock": 4.2,
+  "tdp": 125,
+  "socket": "AM3+",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'AMD', 'FX-8320', 2012, 5432, '{
+  "cores": 8,
+  "threads": 8,
+  "base_clock": 3.5,
+  "boost_clock": 4.0,
+  "tdp": 125,
+  "socket": "AM3+",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'AMD', 'FX-6300', 2012, 5124, '{
+  "cores": 6,
+  "threads": 6,
+  "base_clock": 3.5,
+  "boost_clock": 4.1,
+  "tdp": 95,
+  "socket": "AM3+",
+  "integrated_graphics": false
+}'::jsonb),
+
+('cpu', 'AMD', 'FX-4300', 2012, 4321, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.8,
+  "boost_clock": 4.0,
+  "tdp": 95,
+  "socket": "AM3+",
+  "integrated_graphics": false
+}'::jsonb),
+
+-- =============================================================================
 -- RECENT GENERATION (2023-2024)
 -- =============================================================================
 
