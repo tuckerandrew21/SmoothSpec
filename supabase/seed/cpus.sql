@@ -549,6 +549,41 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
 }'::jsonb),
 
 -- =============================================================================
+-- AMD A-SERIES DESKTOP APUs (Legacy)
+-- =============================================================================
+
+-- AMD A-Series APUs (Trinity and Richland) - 2012-2014
+('cpu', 'AMD', 'A10-6790K', 2013, 3089, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 4.1,
+  "boost_clock": 4.3,
+  "tdp": 100,
+  "socket": "FM2",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'AMD', 'A10-5800K', 2012, 2966, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.8,
+  "boost_clock": 4.2,
+  "tdp": 100,
+  "socket": "FM2",
+  "integrated_graphics": true
+}'::jsonb),
+
+('cpu', 'AMD', 'A8-6600K', 2013, 2854, '{
+  "cores": 4,
+  "threads": 4,
+  "base_clock": 3.9,
+  "boost_clock": 4.2,
+  "tdp": 100,
+  "socket": "FM2",
+  "integrated_graphics": true
+}'::jsonb),
+
+-- =============================================================================
 -- RECENT GENERATION (2023-2024)
 -- =============================================================================
 
