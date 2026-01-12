@@ -744,6 +744,21 @@ INSERT INTO components (type, brand, model, release_year, benchmark_score, specs
   }
 }'::jsonb),
 
+('cpu', 'Intel', 'Core i7-14700K', 2023, 46000, '{
+  "cores": 20,
+  "threads": 28,
+  "base_clock": 3.4,
+  "boost_clock": 5.6,
+  "tdp": 125,
+  "socket": "LGA1700",
+  "integrated_graphics": true,
+  "integrated_graphics_model": "Intel UHD 770",
+  "core_config": {
+    "performance_cores": 8,
+    "efficiency_cores": 12
+  }
+}'::jsonb),
+
 -- =============================================================================
 -- RECENT GENERATION (2023-2024)
 -- =============================================================================
